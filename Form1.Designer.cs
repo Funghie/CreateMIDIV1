@@ -39,6 +39,7 @@
             this.lblMidiStatus = new System.Windows.Forms.Label();
             this.lblEndpointVersion = new System.Windows.Forms.Label();
             this.cmbEndpointVersion = new System.Windows.Forms.ComboBox();
+            this.btnInfo = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // label1
@@ -157,11 +158,24 @@
             this.lblMidiStatus.TabIndex = 7;
             this.lblMidiStatus.Text = "Checking Windows MIDI Services...";
             // 
+            // btnInfo
+            // 
+            this.btnInfo.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnInfo.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            this.btnInfo.Location = new System.Drawing.Point(280, 24);
+            this.btnInfo.Name = "btnInfo";
+            this.btnInfo.Size = new System.Drawing.Size(24, 24);
+            this.btnInfo.TabIndex = 11;
+            this.btnInfo.Text = "i";
+            this.btnInfo.UseVisualStyleBackColor = true;
+            this.btnInfo.Click += new System.EventHandler(this.btnInfo_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(328, 362);
+            this.Controls.Add(this.btnInfo);
             this.Controls.Add(this.cmbEndpointVersion);
             this.Controls.Add(this.lblEndpointVersion);
             this.Controls.Add(this.lblPortsWillBeCreated);
@@ -178,7 +192,7 @@
             this.MinimizeBox = false;
             this.Name = "Form1";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Create Windows MIDI 1.0 Endpoints";
+            this.Text = "Windows MIDI Port Creator";
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -197,6 +211,7 @@
         private System.Windows.Forms.Label lblPortsWillBeCreated;
         private System.Windows.Forms.Label lblEndpointVersion;
         private System.Windows.Forms.ComboBox cmbEndpointVersion;
+        private System.Windows.Forms.Button btnInfo;
     }
 }
 
