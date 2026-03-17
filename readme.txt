@@ -24,7 +24,7 @@ How to Use
 3. Select MIDI version:
    - MIDI 1.0: creates two endpoints (`WM to <name>`, `WM from <name>`)
    - MIDI 2.0: creates one bidirectional endpoint (`<name>`)
-4. Click `Create Ports`
+4. Click `Create Port(s)`
 
 Useful Links
 ------------

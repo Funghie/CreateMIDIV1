@@ -34,6 +34,9 @@
             this.lblPortsWillBeCreated = new System.Windows.Forms.Label();
             this.lblToPreview = new System.Windows.Forms.Label();
             this.lblFromPreview = new System.Windows.Forms.Label();
+            this.lblToSuffix = new System.Windows.Forms.Label();
+            this.lblFromSuffix = new System.Windows.Forms.Label();
+            this.lblMidi2Reference = new System.Windows.Forms.Label();
             this.create = new System.Windows.Forms.Button();
             this.quit = new System.Windows.Forms.Button();
             this.lblMidiStatus = new System.Windows.Forms.Label();
@@ -71,30 +74,6 @@
             this.label2.TabIndex = 2;
             this.label2.Visible = false;
             // 
-            // lblEndpointVersion
-            // 
-            this.lblEndpointVersion.AutoSize = true;
-            this.lblEndpointVersion.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.lblEndpointVersion.Location = new System.Drawing.Point(24, 96);
-            this.lblEndpointVersion.Name = "lblEndpointVersion";
-            this.lblEndpointVersion.Size = new System.Drawing.Size(159, 20);
-            this.lblEndpointVersion.TabIndex = 9;
-            this.lblEndpointVersion.Text = "MIDI Endpoint Version";
-            // 
-            // cmbEndpointVersion
-            // 
-            this.cmbEndpointVersion.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cmbEndpointVersion.Font = new System.Drawing.Font("Segoe UI", 10F);
-            this.cmbEndpointVersion.FormattingEnabled = true;
-            this.cmbEndpointVersion.Items.AddRange(new object[] {
-            "MIDI 1.0",
-            "MIDI 2.0"});
-            this.cmbEndpointVersion.Location = new System.Drawing.Point(24, 118);
-            this.cmbEndpointVersion.Name = "cmbEndpointVersion";
-            this.cmbEndpointVersion.Size = new System.Drawing.Size(280, 31);
-            this.cmbEndpointVersion.TabIndex = 10;
-            this.cmbEndpointVersion.SelectedIndexChanged += new System.EventHandler(this.cmbEndpointVersion_SelectedIndexChanged);
-            // 
             // lblPortsWillBeCreated
             // 
             this.lblPortsWillBeCreated.AutoSize = true;
@@ -124,6 +103,42 @@
             this.lblFromPreview.Size = new System.Drawing.Size(145, 23);
             this.lblFromPreview.TabIndex = 4;
             this.lblFromPreview.Text = "Waiting for Name";
+            // 
+            // lblToSuffix
+            // 
+            this.lblToSuffix.AutoSize = true;
+            this.lblToSuffix.Font = new System.Drawing.Font("Segoe UI", 10F);
+            this.lblToSuffix.ForeColor = System.Drawing.Color.DarkGreen;
+            this.lblToSuffix.Location = new System.Drawing.Point(195, 188);
+            this.lblToSuffix.Name = "lblToSuffix";
+            this.lblToSuffix.Size = new System.Drawing.Size(31, 23);
+            this.lblToSuffix.TabIndex = 13;
+            this.lblToSuffix.Text = "(A)";
+            this.lblToSuffix.Visible = false;
+            // 
+            // lblFromSuffix
+            // 
+            this.lblFromSuffix.AutoSize = true;
+            this.lblFromSuffix.Font = new System.Drawing.Font("Segoe UI", 10F);
+            this.lblFromSuffix.ForeColor = System.Drawing.Color.DarkGreen;
+            this.lblFromSuffix.Location = new System.Drawing.Point(195, 214);
+            this.lblFromSuffix.Name = "lblFromSuffix";
+            this.lblFromSuffix.Size = new System.Drawing.Size(30, 23);
+            this.lblFromSuffix.TabIndex = 14;
+            this.lblFromSuffix.Text = "(B)";
+            this.lblFromSuffix.Visible = false;
+            // 
+            // lblMidi2Reference
+            // 
+            this.lblMidi2Reference.Font = new System.Drawing.Font("Segoe UI", 7.5F, System.Drawing.FontStyle.Italic);
+            this.lblMidi2Reference.ForeColor = System.Drawing.Color.DarkGreen;
+            this.lblMidi2Reference.Location = new System.Drawing.Point(222, 184);
+            this.lblMidi2Reference.Name = "lblMidi2Reference";
+            this.lblMidi2Reference.Size = new System.Drawing.Size(82, 57);
+            this.lblMidi2Reference.TabIndex = 12;
+            this.lblMidi2Reference.Text = "(A) (B)\r\nare visual\r\nreference";
+            this.lblMidi2Reference.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.lblMidi2Reference.Visible = false;
             // 
             // create
             // 
@@ -158,6 +173,30 @@
             this.lblMidiStatus.TabIndex = 7;
             this.lblMidiStatus.Text = "Checking Windows MIDI Services...";
             // 
+            // lblEndpointVersion
+            // 
+            this.lblEndpointVersion.AutoSize = true;
+            this.lblEndpointVersion.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.lblEndpointVersion.Location = new System.Drawing.Point(24, 96);
+            this.lblEndpointVersion.Name = "lblEndpointVersion";
+            this.lblEndpointVersion.Size = new System.Drawing.Size(157, 20);
+            this.lblEndpointVersion.TabIndex = 9;
+            this.lblEndpointVersion.Text = "MIDI Endpoint Version";
+            // 
+            // cmbEndpointVersion
+            // 
+            this.cmbEndpointVersion.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbEndpointVersion.Font = new System.Drawing.Font("Segoe UI", 10F);
+            this.cmbEndpointVersion.FormattingEnabled = true;
+            this.cmbEndpointVersion.Items.AddRange(new object[] {
+            "MIDI 1.0",
+            "MIDI 2.0"});
+            this.cmbEndpointVersion.Location = new System.Drawing.Point(24, 118);
+            this.cmbEndpointVersion.Name = "cmbEndpointVersion";
+            this.cmbEndpointVersion.Size = new System.Drawing.Size(280, 31);
+            this.cmbEndpointVersion.TabIndex = 10;
+            this.cmbEndpointVersion.SelectedIndexChanged += new System.EventHandler(this.cmbEndpointVersion_SelectedIndexChanged);
+            // 
             // btnInfo
             // 
             this.btnInfo.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
@@ -182,6 +221,9 @@
             this.Controls.Add(this.lblMidiStatus);
             this.Controls.Add(this.quit);
             this.Controls.Add(this.create);
+            this.Controls.Add(this.lblMidi2Reference);
+            this.Controls.Add(this.lblFromSuffix);
+            this.Controls.Add(this.lblToSuffix);
             this.Controls.Add(this.lblFromPreview);
             this.Controls.Add(this.lblToPreview);
             this.Controls.Add(this.label2);
@@ -205,6 +247,9 @@
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label lblToPreview;
         private System.Windows.Forms.Label lblFromPreview;
+        private System.Windows.Forms.Label lblToSuffix;
+        private System.Windows.Forms.Label lblFromSuffix;
+        private System.Windows.Forms.Label lblMidi2Reference;
         private System.Windows.Forms.Button create;
         private System.Windows.Forms.Button quit;
         private System.Windows.Forms.Label lblMidiStatus;

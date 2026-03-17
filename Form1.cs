@@ -79,37 +79,60 @@ namespace CreateMIDI
 
         private void UpdatePreviewAndCreateButton()
         {
-            if (!string.IsNullOrWhiteSpace(PortName.Text))
+            bool isMidi2 = !IsMidi1Selected();
+            bool hasName = !string.IsNullOrWhiteSpace(PortName.Text);
+
+            lblPortsWillBeCreated.Text = isMidi2 ? "This port will be created:" : "These ports will be created:";
+
+            if (hasName)
             {
                 string name = PortName.Text.Trim();
-                if (IsMidi1Selected())
+                if (!isMidi2)
                 {
                     lblToPreview.Text = "WM to " + name;
                     lblFromPreview.Text = "WM from " + name;
+                    lblToPreview.ForeColor = SystemColors.ControlText;
+                    lblFromPreview.ForeColor = SystemColors.ControlText;
+                    lblToSuffix.Visible = false;
+                    lblFromSuffix.Visible = false;
+                    lblMidi2Reference.Visible = false;
                 }
                 else
                 {
-                    lblToPreview.Text = name + " (A)";
-                    lblFromPreview.Text = name + " (B)";
-                }
+                    lblToPreview.Text = name;
+                    lblFromPreview.Text = name;
+                    lblToPreview.ForeColor = SystemColors.ControlText;
+                    lblFromPreview.ForeColor = SystemColors.ControlText;
 
-                if (_isCreating)
-                {
-                    create.Enabled = false;
-                    create.BackColor = SystemColors.Control;
-                }
-                else
-                {
-                    create.Enabled = true;
-                    create.BackColor = Color.LimeGreen;
+                    lblToSuffix.Location = new Point(lblToPreview.Left + TextRenderer.MeasureText(lblToPreview.Text, lblToPreview.Font).Width, lblToPreview.Top);
+                    lblFromSuffix.Location = new Point(lblFromPreview.Left + TextRenderer.MeasureText(lblFromPreview.Text, lblFromPreview.Font).Width, lblFromPreview.Top);
+                    lblToSuffix.Visible = true;
+                    lblFromSuffix.Visible = true;
+                    lblMidi2Reference.Visible = true;
                 }
             }
             else
             {
                 lblToPreview.Text = "Waiting for Name";
                 lblFromPreview.Text = "Waiting for Name";
+                lblToPreview.ForeColor = SystemColors.ControlText;
+                lblFromPreview.ForeColor = SystemColors.ControlText;
+                lblToSuffix.Visible = false;
+                lblFromSuffix.Visible = false;
+                lblMidi2Reference.Visible = false;
+            }
+
+            if (_isCreating)
+            {
+                create.Text = "Creating...";
                 create.Enabled = false;
                 create.BackColor = SystemColors.Control;
+            }
+            else
+            {
+                create.Text = isMidi2 ? "Create Port" : "Create Ports";
+                create.Enabled = hasName;
+                create.BackColor = hasName ? Color.LimeGreen : SystemColors.Control;
             }
         }
 
@@ -117,7 +140,6 @@ namespace CreateMIDI
         {
             _isCreating = isCreating;
             UseWaitCursor = isCreating;
-            create.Text = isCreating ? "Creating..." : "Create Ports";
             UpdatePreviewAndCreateButton();
         }
 
