@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
 using System.Text;
@@ -16,6 +13,7 @@ namespace CreateMIDI
 {
     public partial class Form1 : Form
     {
+        private const int MaxEndpointNameLength = 64;
         private bool _isCreating;
 
         public Form1()
@@ -116,6 +114,33 @@ namespace CreateMIDI
             UpdatePreviewAndCreateButton();
         }
 
+        private static bool ValidateEndpointName(string name, out string validationMessage)
+        {
+            if (name.Length > MaxEndpointNameLength)
+            {
+                validationMessage = "Endpoint name is too long. Maximum length is " + MaxEndpointNameLength + " characters.";
+                return false;
+            }
+
+            if (name.IndexOf('"') >= 0)
+            {
+                validationMessage = "Endpoint name cannot contain double-quote characters (\").";
+                return false;
+            }
+
+            for (int i = 0; i < name.Length; i++)
+            {
+                if (char.IsControl(name[i]))
+                {
+                    validationMessage = "Endpoint name cannot contain control characters.";
+                    return false;
+                }
+            }
+
+            validationMessage = string.Empty;
+            return true;
+        }
+
         private static string ResolveMidiExePath()
         {
             const string exeName = "midi.exe";
@@ -200,6 +225,88 @@ namespace CreateMIDI
             return sb.ToString().Trim();
         }
 
+        private static bool TryRunMidiQuery(string arguments, out string stdOut)
+        {
+            stdOut = string.Empty;
+            string exePath = ResolveMidiExePath();
+
+            try
+            {
+                using (Process process = new Process())
+                {
+                    process.StartInfo = new ProcessStartInfo
+                    {
+                        FileName = exePath,
+                        Arguments = arguments,
+                        CreateNoWindow = true,
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true
+                    };
+
+                    process.Start();
+
+                    string output = process.StandardOutput.ReadToEnd();
+                    process.StandardError.ReadToEnd();
+
+                    process.WaitForExit();
+
+                    if (process.ExitCode == 0)
+                    {
+                        stdOut = output;
+                        return true;
+                    }
+                }
+            }
+            catch (Win32Exception)
+            {
+                return false;
+            }
+
+            return false;
+        }
+
+        private static bool TryGetMidiListOutput(out string output)
+        {
+            string[] listCommands =
+            {
+                "endpoint list",
+                "loopback list",
+                "midi1-loopback list",
+                "list"
+            };
+
+            for (int i = 0; i < listCommands.Length; i++)
+            {
+                if (TryRunMidiQuery(listCommands[i], out output) && !string.IsNullOrWhiteSpace(output))
+                    return true;
+            }
+
+            output = string.Empty;
+            return false;
+        }
+
+        private static bool EndpointExistsViaMidiList(params string[] names)
+        {
+            string output;
+            if (!TryGetMidiListOutput(out output))
+                return false;
+
+            string[] lines = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string line = lines[i];
+                for (int j = 0; j < names.Length; j++)
+                {
+                    string name = names[j];
+                    if (!string.IsNullOrWhiteSpace(name) && line.IndexOf(name, StringComparison.OrdinalIgnoreCase) >= 0)
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
         private static CommandRunResult RunMidiCommands(string[] args)
         {
             string exePath = ResolveMidiExePath();
@@ -282,9 +389,13 @@ namespace CreateMIDI
 
         private static bool EndpointPairExists(string baseName)
         {
-            int count = midiOutGetNumDevs();
             string toName = "WM to " + baseName;
             string fromName = "WM from " + baseName;
+
+            if (EndpointExistsViaMidiList(toName, fromName))
+                return true;
+
+            int count = midiOutGetNumDevs();
 
             for (int i = 0; i < count; i++)
             {
@@ -300,9 +411,13 @@ namespace CreateMIDI
 
         private static bool EndpointExists(string endpointName)
         {
-            int count = midiOutGetNumDevs();
             string sideAName = endpointName + " (A)";
             string sideBName = endpointName + " (B)";
+
+            if (EndpointExistsViaMidiList(endpointName, sideAName, sideBName))
+                return true;
+
+            int count = midiOutGetNumDevs();
 
             for (int i = 0; i < count; i++)
             {
@@ -326,6 +441,12 @@ namespace CreateMIDI
             }
 
             string trimmedName = PortName.Text.Trim();
+            string validationMessage;
+            if (!ValidateEndpointName(trimmedName, out validationMessage))
+            {
+                MessageBox.Show(validationMessage, "Invalid Name", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
 
             if (IsMidi1Selected())
             {
