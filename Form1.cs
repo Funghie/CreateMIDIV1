@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
@@ -97,15 +98,48 @@ namespace CreateMIDI
             UpdatePreviewAndCreateButton();
         }
 
-        private bool CreateMidi1Endpoints(string baseName)
+        private static string ResolveMidiExePath()
         {
-            const string exePath = @"C:\Program Files\Windows MIDI Services\Tools\Console\midi.exe";
+            const string exeName = "midi.exe";
 
-            string[] args =
+            string pathEnv = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+            string[] pathParts = pathEnv.Split(Path.PathSeparator);
+            foreach (string part in pathParts)
             {
-                $"midi1-loopback create --name \"WM to {baseName}\"",
-                $"midi1-loopback create --name \"WM from {baseName}\""
+                if (string.IsNullOrWhiteSpace(part))
+                    continue;
+
+                try
+                {
+                    string candidate = Path.Combine(part.Trim(), exeName);
+                    if (File.Exists(candidate))
+                        return candidate;
+                }
+                catch
+                {
+                    // Ignore invalid PATH entries.
+                }
+            }
+
+            string programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            string[] fallbackCandidates =
+            {
+                Path.Combine(programFiles, "Windows MIDI Services", "Tools", "Console", exeName),
+                Path.Combine(programFiles, "Windows MIDI", "Tools", "Console", exeName)
             };
+
+            foreach (string candidate in fallbackCandidates)
+            {
+                if (File.Exists(candidate))
+                    return candidate;
+            }
+
+            return fallbackCandidates[0];
+        }
+
+        private static bool RunMidiCommands(string[] args)
+        {
+            string exePath = ResolveMidiExePath();
 
             foreach (string arg in args)
             {
@@ -128,7 +162,7 @@ namespace CreateMIDI
                             return false;
                     }
                 }
-                catch (System.ComponentModel.Win32Exception)
+                catch (Win32Exception)
                 {
                     return false;
                 }
@@ -137,43 +171,25 @@ namespace CreateMIDI
             return true;
         }
 
+        private bool CreateMidi1Endpoints(string baseName)
+        {
+            string[] args =
+            {
+                $"midi1-loopback create --name \"WM to {baseName}\"",
+                $"midi1-loopback create --name \"WM from {baseName}\""
+            };
+
+            return RunMidiCommands(args);
+        }
+
         private bool CreateMidi2Endpoints(string baseName)
         {
-            const string exePath = @"C:\Program Files\Windows MIDI Services\Tools\Console\midi.exe";
-
             string[] args =
             {
                 $"loopback create --root-name \"{baseName}\""
             };
 
-            foreach (string arg in args)
-            {
-                try
-                {
-                    using (Process process = new Process())
-                    {
-                        process.StartInfo = new ProcessStartInfo
-                        {
-                            FileName = exePath,
-                            Arguments = arg,
-                            CreateNoWindow = true,
-                            UseShellExecute = false
-                        };
-
-                        process.Start();
-                        process.WaitForExit();
-
-                        if (process.ExitCode != 0)
-                            return false;
-                    }
-                }
-                catch (System.ComponentModel.Win32Exception)
-                {
-                    return false;
-                }
-            }
-
-            return true;
+            return RunMidiCommands(args);
         }
 
         [DllImport("winmm.dll")]
@@ -268,7 +284,9 @@ namespace CreateMIDI
                 else
                 {
                     MessageBox.Show(
-                        "The endpoints could not be created. Ensure you have administrator rights and the MIDI service is running.",
+                        "The endpoints could not be created. Ensure you have administrator rights and the MIDI service is running.\r\n\r\n" +
+                        "If this continues, install the Windows MIDI Services SDK (includes the MIDI Console `midi.exe`).\r\n" +
+                        "You can install it with: winget install Microsoft.WindowsMIDIServicesSDK",
                         "Creation Failed",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Warning);
@@ -303,7 +321,9 @@ namespace CreateMIDI
             else
             {
                 MessageBox.Show(
-                    "The endpoint could not be created. Ensure you have administrator rights and the MIDI service is running.",
+                    "The endpoint could not be created. Ensure you have administrator rights and the MIDI service is running.\r\n\r\n" +
+                    "If this continues, install the Windows MIDI Services SDK (includes the MIDI Console `midi.exe`).\r\n" +
+                    "You can install it with: winget install Microsoft.WindowsMIDIServicesSDK",
                     "Creation Failed",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);
@@ -322,7 +342,7 @@ namespace CreateMIDI
                 "These are bi-directional, so only one port will be created.\r\n" +
                 "The preview shows '(A)' and '(B)' for clarity, as this is how they appear in some environments.\r\n\r\n" +
                 "Create:\r\n" +
-                "Creates endpoint(s) using the entered name and selected MIDI version.\r\n\n" +
+                "Creates endpoint(s) using the entered name and selected MIDI version.\r\n" +
                 "After you have successfully created your port(s), you can create another using the same process.\r\n\r\n" +
                 "Quit:\r\n" +
                 "Closes the application.";
