@@ -20,6 +20,7 @@ namespace CreateMIDI
             InitializeComponent();
 
             cmbEndpointVersion.SelectedIndex = 0;
+            UpdatePreviewAndCreateButton();
 
             if (IsMidiServiceRunning())
             {
@@ -53,12 +54,27 @@ namespace CreateMIDI
 
         }
 
-        private void PortName_TextChanged(object sender, EventArgs e)
+        private bool IsMidi1Selected()
         {
-            if (!string.IsNullOrEmpty(PortName.Text))
+            return cmbEndpointVersion.SelectedItem != null && cmbEndpointVersion.SelectedItem.ToString() == "MIDI 1.0";
+        }
+
+        private void UpdatePreviewAndCreateButton()
+        {
+            if (!string.IsNullOrWhiteSpace(PortName.Text))
             {
-                lblToPreview.Text = "WM to " + PortName.Text;
-                lblFromPreview.Text = "WM from " + PortName.Text;
+                string name = PortName.Text.Trim();
+                if (IsMidi1Selected())
+                {
+                    lblToPreview.Text = "WM to " + name;
+                    lblFromPreview.Text = "WM from " + name;
+                }
+                else
+                {
+                    lblToPreview.Text = name + " (A)";
+                    lblFromPreview.Text = name + " (B)";
+                }
+
                 create.Enabled = true;
                 create.BackColor = Color.LimeGreen;
             }
@@ -71,6 +87,16 @@ namespace CreateMIDI
             }
         }
 
+        private void PortName_TextChanged(object sender, EventArgs e)
+        {
+            UpdatePreviewAndCreateButton();
+        }
+
+        private void cmbEndpointVersion_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            UpdatePreviewAndCreateButton();
+        }
+
         private bool CreateMidi1Endpoints(string baseName)
         {
             const string exePath = @"C:\Program Files\Windows MIDI Services\Tools\Console\midi.exe";
@@ -79,6 +105,45 @@ namespace CreateMIDI
             {
                 $"midi1-loopback create --name \"WM to {baseName}\"",
                 $"midi1-loopback create --name \"WM from {baseName}\""
+            };
+
+            foreach (string arg in args)
+            {
+                try
+                {
+                    using (Process process = new Process())
+                    {
+                        process.StartInfo = new ProcessStartInfo
+                        {
+                            FileName = exePath,
+                            Arguments = arg,
+                            CreateNoWindow = true,
+                            UseShellExecute = false
+                        };
+
+                        process.Start();
+                        process.WaitForExit();
+
+                        if (process.ExitCode != 0)
+                            return false;
+                    }
+                }
+                catch (System.ComponentModel.Win32Exception)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private bool CreateMidi2Endpoints(string baseName)
+        {
+            const string exePath = @"C:\Program Files\Windows MIDI Services\Tools\Console\midi.exe";
+
+            string[] args =
+            {
+                $"loopback create --root-name \"{baseName}\""
             };
 
             foreach (string arg in args)
@@ -146,6 +211,25 @@ namespace CreateMIDI
             return false;
         }
 
+        private static bool EndpointExists(string endpointName)
+        {
+            int count = midiOutGetNumDevs();
+            string sideAName = endpointName + " (A)";
+            string sideBName = endpointName + " (B)";
+
+            for (int i = 0; i < count; i++)
+            {
+                MidiOutCaps caps = new MidiOutCaps();
+                if (midiOutGetDevCaps(i, ref caps, Marshal.SizeOf(caps)) == 0)
+                {
+                    if (caps.szPname == endpointName || caps.szPname == sideAName || caps.szPname == sideBName)
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
         private void create_Click(object sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(PortName.Text))
@@ -154,22 +238,49 @@ namespace CreateMIDI
                 return;
             }
 
-            if (cmbEndpointVersion.SelectedItem == null || cmbEndpointVersion.SelectedItem.ToString() != "MIDI 1.0")
+            string trimmedName = PortName.Text.Trim();
+
+            if (IsMidi1Selected())
             {
-                MessageBox.Show(
-                    "MIDI 2.0 endpoint creation is not wired yet. Select MIDI 1.0 to use current creation logic.",
-                    "Not Implemented",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
+                if (EndpointPairExists(trimmedName))
+                {
+                    DialogResult confirm = MessageBox.Show(
+                        "A port named 'WM to " + trimmedName + "' or 'WM from " + trimmedName + "' already exists. Create anyway?",
+                        "Duplicate Name",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Question);
+
+                    if (confirm != DialogResult.Yes)
+                        return;
+                }
+
+                if (CreateMidi1Endpoints(trimmedName))
+                {
+                    MessageBox.Show(
+                        "Created 'WM to " + trimmedName + "' and 'WM from " + trimmedName + "' successfully.",
+                        "Success",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+
+                    PortName.Clear();
+                    PortName.Focus();
+                }
+                else
+                {
+                    MessageBox.Show(
+                        "The endpoints could not be created. Ensure you have administrator rights and the MIDI service is running.",
+                        "Creation Failed",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                }
+
                 return;
             }
 
-            string trimmedName = PortName.Text.Trim();
-
-            if (EndpointPairExists(trimmedName))
+            if (EndpointExists(trimmedName))
             {
                 DialogResult confirm = MessageBox.Show(
-                    "A port named 'WM to " + trimmedName + "' or 'WM from " + trimmedName + "' already exists. Create anyway?",
+                    "A port named '" + trimmedName + "' already exists. Create anyway?",
                     "Duplicate Name",
                     MessageBoxButtons.YesNo,
                     MessageBoxIcon.Question);
@@ -178,10 +289,10 @@ namespace CreateMIDI
                     return;
             }
 
-            if (CreateMidi1Endpoints(trimmedName))
+            if (CreateMidi2Endpoints(trimmedName))
             {
                 MessageBox.Show(
-                    "Created 'WM to " + trimmedName + "' and 'WM from " + trimmedName + "' successfully.",
+                    "Created '" + trimmedName + "' successfully.",
                     "Success",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
@@ -192,7 +303,7 @@ namespace CreateMIDI
             else
             {
                 MessageBox.Show(
-                    "The endpoints could not be created. Ensure you have administrator rights and the MIDI service is running.",
+                    "The endpoint could not be created. Ensure you have administrator rights and the MIDI service is running.",
                     "Creation Failed",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);

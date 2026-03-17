@@ -92,6 +92,7 @@
             this.cmbEndpointVersion.Name = "cmbEndpointVersion";
             this.cmbEndpointVersion.Size = new System.Drawing.Size(280, 31);
             this.cmbEndpointVersion.TabIndex = 10;
+            this.cmbEndpointVersion.SelectedIndexChanged += new System.EventHandler(this.cmbEndpointVersion_SelectedIndexChanged);
             // 
             // lblPortsWillBeCreated
             // 
