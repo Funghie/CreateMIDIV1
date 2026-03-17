@@ -16,6 +16,8 @@ namespace CreateMIDI
 {
     public partial class Form1 : Form
     {
+        private bool _isCreating;
+
         public Form1()
         {
             InitializeComponent();
@@ -76,8 +78,16 @@ namespace CreateMIDI
                     lblFromPreview.Text = name + " (B)";
                 }
 
-                create.Enabled = true;
-                create.BackColor = Color.LimeGreen;
+                if (_isCreating)
+                {
+                    create.Enabled = false;
+                    create.BackColor = SystemColors.Control;
+                }
+                else
+                {
+                    create.Enabled = true;
+                    create.BackColor = Color.LimeGreen;
+                }
             }
             else
             {
@@ -86,6 +96,14 @@ namespace CreateMIDI
                 create.Enabled = false;
                 create.BackColor = SystemColors.Control;
             }
+        }
+
+        private void SetCreationInProgress(bool isCreating)
+        {
+            _isCreating = isCreating;
+            UseWaitCursor = isCreating;
+            create.Text = isCreating ? "Creating..." : "Create Ports";
+            UpdatePreviewAndCreateButton();
         }
 
         private void PortName_TextChanged(object sender, EventArgs e)
@@ -137,7 +155,52 @@ namespace CreateMIDI
             return fallbackCandidates[0];
         }
 
-        private static bool RunMidiCommands(string[] args)
+        private sealed class CommandRunResult
+        {
+            public bool Success { get; private set; }
+            public string ErrorDetails { get; private set; }
+
+            private CommandRunResult(bool success, string errorDetails)
+            {
+                Success = success;
+                ErrorDetails = errorDetails;
+            }
+
+            public static CommandRunResult Ok()
+            {
+                return new CommandRunResult(true, string.Empty);
+            }
+
+            public static CommandRunResult Fail(string errorDetails)
+            {
+                return new CommandRunResult(false, errorDetails ?? string.Empty);
+            }
+        }
+
+        private static string BuildCommandErrorDetails(string arguments, int exitCode, string stdOut, string stdErr)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("Command failed: " + arguments);
+            sb.AppendLine("Exit code: " + exitCode);
+
+            if (!string.IsNullOrWhiteSpace(stdErr))
+            {
+                sb.AppendLine();
+                sb.AppendLine("Error output:");
+                sb.AppendLine(stdErr.Trim());
+            }
+
+            if (!string.IsNullOrWhiteSpace(stdOut))
+            {
+                sb.AppendLine();
+                sb.AppendLine("Standard output:");
+                sb.AppendLine(stdOut.Trim());
+            }
+
+            return sb.ToString().Trim();
+        }
+
+        private static CommandRunResult RunMidiCommands(string[] args)
         {
             string exePath = ResolveMidiExePath();
 
@@ -152,26 +215,34 @@ namespace CreateMIDI
                             FileName = exePath,
                             Arguments = arg,
                             CreateNoWindow = true,
-                            UseShellExecute = false
+                            UseShellExecute = false,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true
                         };
 
                         process.Start();
+
+                        string stdOut = process.StandardOutput.ReadToEnd();
+                        string stdErr = process.StandardError.ReadToEnd();
+
                         process.WaitForExit();
 
                         if (process.ExitCode != 0)
-                            return false;
+                        {
+                            return CommandRunResult.Fail(BuildCommandErrorDetails(arg, process.ExitCode, stdOut, stdErr));
+                        }
                     }
                 }
-                catch (Win32Exception)
+                catch (Win32Exception ex)
                 {
-                    return false;
+                    return CommandRunResult.Fail("Unable to start midi.exe from: " + exePath + "\r\n" + ex.Message);
                 }
             }
 
-            return true;
+            return CommandRunResult.Ok();
         }
 
-        private bool CreateMidi1Endpoints(string baseName)
+        private CommandRunResult CreateMidi1Endpoints(string baseName)
         {
             string[] args =
             {
@@ -182,7 +253,7 @@ namespace CreateMIDI
             return RunMidiCommands(args);
         }
 
-        private bool CreateMidi2Endpoints(string baseName)
+        private CommandRunResult CreateMidi2Endpoints(string baseName)
         {
             string[] args =
             {
@@ -246,7 +317,7 @@ namespace CreateMIDI
             return false;
         }
 
-        private void create_Click(object sender, EventArgs e)
+        private async void create_Click(object sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(PortName.Text))
             {
@@ -270,26 +341,29 @@ namespace CreateMIDI
                         return;
                 }
 
-                if (CreateMidi1Endpoints(trimmedName))
+                SetCreationInProgress(true);
+                try
                 {
-                    MessageBox.Show(
-                        "Created 'WM to " + trimmedName + "' and 'WM from " + trimmedName + "' successfully.",
-                        "Success",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
+                    CommandRunResult result = await Task.Run(() => CreateMidi1Endpoints(trimmedName));
+                    if (result.Success)
+                    {
+                        MessageBox.Show(
+                            "Created 'WM to " + trimmedName + "' and 'WM from " + trimmedName + "' successfully.",
+                            "Success",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
 
-                    PortName.Clear();
-                    PortName.Focus();
+                        PortName.Clear();
+                        PortName.Focus();
+                    }
+                    else
+                    {
+                        ShowCreationFailedMessage("endpoints", result.ErrorDetails);
+                    }
                 }
-                else
+                finally
                 {
-                    MessageBox.Show(
-                        "The endpoints could not be created. Ensure you have administrator rights and the MIDI service is running.\r\n\r\n" +
-                        "If this continues, install the Windows MIDI Services SDK (includes the MIDI Console `midi.exe`).\r\n" +
-                        "You can install it with: winget install Microsoft.WindowsMIDIServicesSDK",
-                        "Creation Failed",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning);
+                    SetCreationInProgress(false);
                 }
 
                 return;
@@ -307,27 +381,45 @@ namespace CreateMIDI
                     return;
             }
 
-            if (CreateMidi2Endpoints(trimmedName))
+            SetCreationInProgress(true);
+            try
             {
-                MessageBox.Show(
-                    "Created '" + trimmedName + "' successfully.",
-                    "Success",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
+                CommandRunResult result = await Task.Run(() => CreateMidi2Endpoints(trimmedName));
+                if (result.Success)
+                {
+                    MessageBox.Show(
+                        "Created '" + trimmedName + "' successfully.",
+                        "Success",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
 
-                PortName.Clear();
-                PortName.Focus();
+                    PortName.Clear();
+                    PortName.Focus();
+                }
+                else
+                {
+                    ShowCreationFailedMessage("endpoint", result.ErrorDetails);
+                }
             }
-            else
+            finally
             {
-                MessageBox.Show(
-                    "The endpoint could not be created. Ensure you have administrator rights and the MIDI service is running.\r\n\r\n" +
-                    "If this continues, install the Windows MIDI Services SDK (includes the MIDI Console `midi.exe`).\r\n" +
-                    "You can install it with: winget install Microsoft.WindowsMIDIServicesSDK",
-                    "Creation Failed",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
+                SetCreationInProgress(false);
             }
+        }
+
+        private void ShowCreationFailedMessage(string target, string errorDetails)
+        {
+            string message =
+                "The " + target + " could not be created. Ensure you have administrator rights and the MIDI service is running.\r\n\r\n" +
+                "If this continues, install the Windows MIDI Services SDK (includes the MIDI Console midi.exe).\r\n" +
+                "You can install it with: winget install Microsoft.WindowsMIDIServicesSDK";
+
+            if (!string.IsNullOrWhiteSpace(errorDetails))
+            {
+                message += "\r\n\r\nDetails:\r\n" + errorDetails;
+            }
+
+            MessageBox.Show(message, "Creation Failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
 
         private void btnInfo_Click(object sender, EventArgs e)
