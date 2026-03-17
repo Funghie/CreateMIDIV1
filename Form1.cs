@@ -562,22 +562,35 @@ namespace CreateMIDI
 
         private void btnInfo_Click(object sender, EventArgs e)
         {
-            string infoText =
-                "Windows MIDI Port Creator by Phil Pendlebury\r\n" +
-                "www.everythingcreative.biz\r\n\r\n" +
-                "Creating MIDI 1.0 endpoints:\r\n" +
-                "Enter the desired name.\r\n" +
-                "Two ports will be created: 'WM to' and 'WM from'.\r\n\r\n" +
-                "Creating MIDI 2.0 endpoints:\r\n" +
-                "These are bi-directional, so only one port will be created.\r\n" +
-                "The preview shows '(A)' and '(B)' for clarity, as this is how they appear in some environments.\r\n\r\n" +
-                "Create:\r\n" +
-                "Creates endpoint(s) using the entered name and selected MIDI version.\r\n" +
-                "After you have successfully created your port(s), you can create another using the same process.\r\n\r\n" +
-                "Quit:\r\n" +
-                "Closes the application.";
+            string readmePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "readme.txt");
 
-            MessageBox.Show(infoText, "About Windows MIDI Port Creator", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            if (!File.Exists(readmePath))
+            {
+                MessageBox.Show(
+                    "The help file 'readme.txt' was not found next to the application.\r\n\r\n" +
+                    "Please ensure readme.txt is included with the distributed files.",
+                    "Help File Missing",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = readmePath,
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "Unable to open readme.txt.\r\n\r\n" + ex.Message,
+                    "Open Failed",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+            }
         }
 
         private void quit_Click(object sender, EventArgs e)
