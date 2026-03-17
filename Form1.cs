@@ -19,6 +19,7 @@ namespace CreateMIDI
         public Form1()
         {
             InitializeComponent();
+            ApplyExecutableIcon();
 
             cmbEndpointVersion.SelectedIndex = 0;
             UpdatePreviewAndCreateButton();
@@ -53,6 +54,22 @@ namespace CreateMIDI
         private void label1_Click(object sender, EventArgs e)
         {
 
+        }
+
+        private void ApplyExecutableIcon()
+        {
+            try
+            {
+                Icon exeIcon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+                if (exeIcon != null)
+                {
+                    this.Icon = exeIcon;
+                }
+            }
+            catch
+            {
+                // Keep default icon if extraction fails.
+            }
         }
 
         private bool IsMidi1Selected()
