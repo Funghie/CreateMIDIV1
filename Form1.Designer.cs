@@ -133,9 +133,9 @@
             // 
             this.lblMidi2Reference.Font = new System.Drawing.Font("Segoe UI", 7.5F, System.Drawing.FontStyle.Italic);
             this.lblMidi2Reference.ForeColor = System.Drawing.Color.DarkGreen;
-            this.lblMidi2Reference.Location = new System.Drawing.Point(370, 182);
+            this.lblMidi2Reference.Location = new System.Drawing.Point(370, 188);
             this.lblMidi2Reference.Name = "lblMidi2Reference";
-            this.lblMidi2Reference.Size = new System.Drawing.Size(82, 57);
+            this.lblMidi2Reference.Size = new System.Drawing.Size(82, 49);
             this.lblMidi2Reference.TabIndex = 12;
             this.lblMidi2Reference.Text = "(A) (B)\r\nare visual\r\nreference";
             this.lblMidi2Reference.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
