@@ -26,6 +26,21 @@ How to Use
    - MIDI 2.0: creates one bidirectional endpoint (`<name>`)
 4. Click `Create Port(s)`
 
+Importing loopMIDI Ports
+------------------------
+Use the `Import loopMIDI` button to migrate loopMIDI ports to Windows MIDI 1.0.
+
+Each detected loopMIDI port is created with the exact same name.
+
+After import, the app shows a migration summary, including the port names created.
+
+Temporary Endpoint Behaviour
+----------------------------
+At this stage, all ports created by this tool are temporary.
+
+They do not persist after a reboot.
+They do not persist after restarting the Windows MIDI service (`midisrv`).
+
 Useful Links
 ------------
 - Windows MIDI Services (Get latest runtime and tools):

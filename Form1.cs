@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
@@ -8,6 +9,7 @@ using System.ServiceProcess;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Microsoft.Win32;
 
 namespace CreateMIDI
 {
@@ -409,6 +411,17 @@ namespace CreateMIDI
             return RunMidiCommands(args);
         }
 
+        private CommandRunResult CreateMidi1EndpointWithExactName(string endpointName)
+        {
+            string escapedName = endpointName.Replace("\"", "\\\"");
+            string[] args =
+            {
+                "midi1-loopback create --name \"" + escapedName + "\""
+            };
+
+            return RunMidiCommands(args);
+        }
+
         [DllImport("winmm.dll")]
         private static extern int midiOutGetNumDevs();
 
@@ -618,6 +631,99 @@ namespace CreateMIDI
         private void quit_Click(object sender, EventArgs e)
         {
             Application.Exit();
+        }
+
+        private async void button1_Click(object sender, EventArgs e)
+        {
+            const string loopMidiPortsRegistryPath = @"Software\Tobias Erichsen\loopMIDI\Ports";
+            int migratedCount = 0;
+            List<string> migratedPortNames = new List<string>();
+
+            try
+            {
+                using (RegistryKey portsKey = Registry.CurrentUser.OpenSubKey(loopMidiPortsRegistryPath))
+                {
+                    if (portsKey == null)
+                    {
+                        MessageBox.Show(
+                            "loopMIDI is not installed or no loopMIDI ports were found.",
+                            "Migration Unavailable",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Warning);
+                        return;
+                    }
+
+                    string[] valueNames = portsKey.GetValueNames();
+                    for (int i = 0; i < valueNames.Length; i++)
+                    {
+                        string portName = valueNames[i];
+                        if (string.IsNullOrWhiteSpace(portName))
+                            continue;
+
+                        RegistryValueKind valueKind;
+                        try
+                        {
+                            valueKind = portsKey.GetValueKind(portName);
+                        }
+                        catch
+                        {
+                            continue;
+                        }
+
+                        if (valueKind != RegistryValueKind.DWord)
+                            continue;
+
+                        CommandRunResult result = await Task.Run(() => CreateMidi1EndpointWithExactName(portName));
+                        if (!result.Success)
+                        {
+                            ShowCreationFailedMessage("endpoint", result.ErrorDetails);
+                            return;
+                        }
+
+                        migratedCount++;
+                        migratedPortNames.Add(portName);
+                    }
+                }
+
+                if (migratedCount == 0)
+                {
+                    MessageBox.Show(
+                        "No loopMIDI Ports were found",
+                        "Migration Complete",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                    return;
+                }
+
+                StringBuilder successMessage = new StringBuilder();
+                successMessage.AppendLine("Successfully migrated ports from loopMIDI:");
+                for (int i = 0; i < migratedPortNames.Count; i++)
+                {
+                    successMessage.AppendLine(migratedPortNames[i]);
+                }
+
+                MessageBox.Show(
+                    successMessage.ToString().TrimEnd(),
+                    "Migration Complete",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                MessageBox.Show(
+                    "Access to loopMIDI registry entries was denied.\r\n\r\n" + ex.Message,
+                    "Migration Failed",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "loopMIDI is not installed or its registry entries could not be read.\r\n\r\n" + ex.Message,
+                    "Migration Failed",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+            }
         }
     }
 }

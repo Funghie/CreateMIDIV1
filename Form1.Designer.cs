@@ -43,6 +43,7 @@
             this.lblEndpointVersion = new System.Windows.Forms.Label();
             this.cmbEndpointVersion = new System.Windows.Forms.ComboBox();
             this.btnInfo = new System.Windows.Forms.Button();
+            this.btnGetLoopMIDI = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // label1
@@ -61,7 +62,7 @@
             this.PortName.Font = new System.Drawing.Font("Segoe UI", 11F);
             this.PortName.Location = new System.Drawing.Point(24, 53);
             this.PortName.Name = "PortName";
-            this.PortName.Size = new System.Drawing.Size(280, 32);
+            this.PortName.Size = new System.Drawing.Size(428, 32);
             this.PortName.TabIndex = 1;
             this.PortName.TextChanged += new System.EventHandler(this.PortName_TextChanged);
             // 
@@ -132,7 +133,7 @@
             // 
             this.lblMidi2Reference.Font = new System.Drawing.Font("Segoe UI", 7.5F, System.Drawing.FontStyle.Italic);
             this.lblMidi2Reference.ForeColor = System.Drawing.Color.DarkGreen;
-            this.lblMidi2Reference.Location = new System.Drawing.Point(222, 184);
+            this.lblMidi2Reference.Location = new System.Drawing.Point(370, 182);
             this.lblMidi2Reference.Name = "lblMidi2Reference";
             this.lblMidi2Reference.Size = new System.Drawing.Size(82, 57);
             this.lblMidi2Reference.TabIndex = 12;
@@ -155,7 +156,7 @@
             // quit
             // 
             this.quit.Font = new System.Drawing.Font("Segoe UI", 11F);
-            this.quit.Location = new System.Drawing.Point(174, 262);
+            this.quit.Location = new System.Drawing.Point(322, 262);
             this.quit.Name = "quit";
             this.quit.Size = new System.Drawing.Size(130, 45);
             this.quit.TabIndex = 6;
@@ -193,7 +194,7 @@
             "MIDI 2.0"});
             this.cmbEndpointVersion.Location = new System.Drawing.Point(24, 118);
             this.cmbEndpointVersion.Name = "cmbEndpointVersion";
-            this.cmbEndpointVersion.Size = new System.Drawing.Size(280, 31);
+            this.cmbEndpointVersion.Size = new System.Drawing.Size(428, 31);
             this.cmbEndpointVersion.TabIndex = 10;
             this.cmbEndpointVersion.SelectedIndexChanged += new System.EventHandler(this.cmbEndpointVersion_SelectedIndexChanged);
             // 
@@ -201,7 +202,7 @@
             // 
             this.btnInfo.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btnInfo.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
-            this.btnInfo.Location = new System.Drawing.Point(280, 24);
+            this.btnInfo.Location = new System.Drawing.Point(428, 24);
             this.btnInfo.Name = "btnInfo";
             this.btnInfo.Size = new System.Drawing.Size(24, 24);
             this.btnInfo.TabIndex = 11;
@@ -209,11 +210,24 @@
             this.btnInfo.UseVisualStyleBackColor = true;
             this.btnInfo.Click += new System.EventHandler(this.btnInfo_Click);
             // 
+            // btnGetLoopMIDI
+            // 
+            this.btnGetLoopMIDI.BackColor = System.Drawing.Color.LightBlue;
+            this.btnGetLoopMIDI.Font = new System.Drawing.Font("Segoe UI", 8F);
+            this.btnGetLoopMIDI.Location = new System.Drawing.Point(160, 262);
+            this.btnGetLoopMIDI.Name = "btnGetLoopMIDI";
+            this.btnGetLoopMIDI.Size = new System.Drawing.Size(156, 45);
+            this.btnGetLoopMIDI.TabIndex = 15;
+            this.btnGetLoopMIDI.Text = "Import loopMIDI";
+            this.btnGetLoopMIDI.UseVisualStyleBackColor = false;
+            this.btnGetLoopMIDI.Click += new System.EventHandler(this.button1_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(328, 362);
+            this.ClientSize = new System.Drawing.Size(476, 374);
+            this.Controls.Add(this.btnGetLoopMIDI);
             this.Controls.Add(this.btnInfo);
             this.Controls.Add(this.cmbEndpointVersion);
             this.Controls.Add(this.lblEndpointVersion);
@@ -257,6 +271,7 @@
         private System.Windows.Forms.Label lblEndpointVersion;
         private System.Windows.Forms.ComboBox cmbEndpointVersion;
         private System.Windows.Forms.Button btnInfo;
+        private System.Windows.Forms.Button btnGetLoopMIDI;
     }
 }
 
