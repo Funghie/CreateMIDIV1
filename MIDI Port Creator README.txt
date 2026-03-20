@@ -24,6 +24,7 @@ How to Use
 3. Select MIDI version:
    - MIDI 1.0: creates two endpoints (`WM to <name>`, `WM from <name>`)
    - MIDI 2.0: creates one bidirectional endpoint (`<name>`)
+   - When creating MIDI 2.0 endpoints, they may show up as (`<name>`) (A) and (`<name>`) (B) in some applications. This is expected behaviour.
 4. Click `Create Port(s)`
 
 Importing loopMIDI Ports

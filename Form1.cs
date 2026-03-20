@@ -1,15 +1,20 @@
-﻿using System;
+﻿// Copyright (c) 2026 Phil Pendlebury
+// Everything Creative
+// Licensed under MIT
+
+using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Microsoft.Win32;
 
 namespace CreateMIDI
 {
@@ -18,10 +23,12 @@ namespace CreateMIDI
         private const int MaxEndpointNameLength = 64;
         private bool _isCreating;
 
+        // Initialize the form, apply the app icon, and show MIDI service status.
         public Form1()
         {
             InitializeComponent();
             ApplyExecutableIcon();
+            lblVersion.Text = GetDisplayVersionText();
 
             cmbEndpointVersion.SelectedIndex = 0;
             UpdatePreviewAndCreateButton();
@@ -38,6 +45,32 @@ namespace CreateMIDI
             }
         }
 
+        // Return a short display version from the assembly file version.
+        private static string GetDisplayVersionText()
+        {
+            Assembly assembly = Assembly.GetExecutingAssembly();
+            object[] attributes = assembly.GetCustomAttributes(typeof(AssemblyFileVersionAttribute), false);
+
+            if (attributes.Length > 0)
+            {
+                AssemblyFileVersionAttribute fileVersionAttribute = attributes[0] as AssemblyFileVersionAttribute;
+                Version version;
+                if (fileVersionAttribute != null && Version.TryParse(fileVersionAttribute.Version, out version))
+                {
+                    return string.Format("v{0}.{1}.{2}", version.Major, version.Minor, version.Build);
+                }
+            }
+
+            Version assemblyVersion = assembly.GetName().Version;
+            if (assemblyVersion != null)
+            {
+                return string.Format("v{0}.{1}.{2}", assemblyVersion.Major, assemblyVersion.Minor, assemblyVersion.Build);
+            }
+
+            return "v1.0.0";
+        }
+
+        // Check whether the Windows MIDI service is currently available.
         private static bool IsMidiServiceRunning()
         {
             try
@@ -58,6 +91,7 @@ namespace CreateMIDI
 
         }
 
+        // Use the executable's icon for the main window when possible.
         private void ApplyExecutableIcon()
         {
             try
@@ -74,6 +108,7 @@ namespace CreateMIDI
             }
         }
 
+        // UI helpers for endpoint mode selection and preview text.
         private bool IsMidi1Selected()
         {
             return cmbEndpointVersion.SelectedItem != null && cmbEndpointVersion.SelectedItem.ToString() == "MIDI 1.0";
@@ -103,7 +138,7 @@ namespace CreateMIDI
                 else
                 {
                     lblToPreview.Text = name;
-                    lblFromPreview.Text = "(A) (B): Labels are shown by some DAW hosts";
+                    lblFromPreview.Text = "(A) (B) are labels shown by some DAW hosts";
                     lblToPreview.ForeColor = SystemColors.ControlText;
                     lblFromPreview.ForeColor = Color.DarkGreen;
 
@@ -149,6 +184,7 @@ namespace CreateMIDI
             UpdatePreviewAndCreateButton();
         }
 
+        // Refresh the preview when the entered name or endpoint version changes.
         private void PortName_TextChanged(object sender, EventArgs e)
         {
             UpdatePreviewAndCreateButton();
@@ -159,6 +195,7 @@ namespace CreateMIDI
             UpdatePreviewAndCreateButton();
         }
 
+        // Validate endpoint names before calling the MIDI tools.
         private static bool ValidateEndpointName(string name, out string validationMessage)
         {
             if (name.Length > MaxEndpointNameLength)
@@ -186,6 +223,7 @@ namespace CreateMIDI
             return true;
         }
 
+        // Locate midi.exe from PATH first, then try common install folders.
         private static string ResolveMidiExePath()
         {
             const string exeName = "midi.exe";
@@ -225,6 +263,7 @@ namespace CreateMIDI
             return fallbackCandidates[0];
         }
 
+        // Hold the result of running midi.exe commands.
         private sealed class CommandRunResult
         {
             public bool Success { get; private set; }
@@ -247,6 +286,7 @@ namespace CreateMIDI
             }
         }
 
+        // Build readable command error text for failed MIDI tool calls.
         private static string BuildCommandErrorDetails(string arguments, int exitCode, string stdOut, string stdErr)
         {
             StringBuilder sb = new StringBuilder();
@@ -270,6 +310,7 @@ namespace CreateMIDI
             return sb.ToString().Trim();
         }
 
+        // Query midi.exe for information about existing endpoints.
         private static bool TryRunMidiQuery(string arguments, out string stdOut)
         {
             stdOut = string.Empty;
@@ -352,6 +393,7 @@ namespace CreateMIDI
             return false;
         }
 
+        // Run one or more midi.exe commands to create endpoints.
         private static CommandRunResult RunMidiCommands(string[] args)
         {
             string exePath = ResolveMidiExePath();
@@ -394,6 +436,7 @@ namespace CreateMIDI
             return CommandRunResult.Ok();
         }
 
+        // Create MIDI 1.0 or MIDI 2.0 endpoints using the selected naming rules.
         private CommandRunResult CreateMidi1Endpoints(string baseName)
         {
             string[] args =
@@ -426,6 +469,7 @@ namespace CreateMIDI
             return RunMidiCommands(args);
         }
 
+        // Native WinMM calls used as a fallback when checking existing MIDI outputs.
         [DllImport("winmm.dll")]
         private static extern int midiOutGetNumDevs();
 
@@ -443,6 +487,7 @@ namespace CreateMIDI
             public uint dwSupport;
         }
 
+        // Check for duplicate endpoint names before creating new ones.
         private static bool EndpointPairExists(string baseName)
         {
             string toName = "WM to " + baseName;
@@ -488,6 +533,7 @@ namespace CreateMIDI
             return false;
         }
 
+        // Handle manual endpoint creation from the main Create button.
         private async void create_Click(object sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(PortName.Text))
@@ -584,6 +630,7 @@ namespace CreateMIDI
             }
         }
 
+        // Show a friendly failure message when endpoint creation does not succeed.
         private void ShowCreationFailedMessage(string target, string errorDetails)
         {
             string message =
@@ -599,15 +646,16 @@ namespace CreateMIDI
             MessageBox.Show(message, "Creation Failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
 
+        // Open the bundled readme file for quick help.
         private void btnInfo_Click(object sender, EventArgs e)
         {
-            string readmePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "readme.txt");
+            string readmePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "MIDI Port Creator README.txt");
 
             if (!File.Exists(readmePath))
             {
                 MessageBox.Show(
-                    "The help file 'readme.txt' was not found next to the application.\r\n\r\n" +
-                    "Please ensure readme.txt is included with the distributed files.",
+                    "The help file 'MIDI Port Creator README.txt' was not found next to the application.\r\n\r\n" +
+                    "Please ensure MIDI Port Creator README.txt is included with the distributed files.",
                     "Help File Missing",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);
@@ -625,18 +673,20 @@ namespace CreateMIDI
             catch (Exception ex)
             {
                 MessageBox.Show(
-                    "Unable to open readme.txt.\r\n\r\n" + ex.Message,
+                    "Unable to open MIDI Port Creator README.txt.\r\n\r\n" + ex.Message,
                     "Open Failed",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);
             }
         }
 
+        // Close the application.
         private void quit_Click(object sender, EventArgs e)
         {
             Application.Exit();
         }
 
+        // Migrate existing loopMIDI port names into Windows MIDI endpoints.
         private async void button1_Click(object sender, EventArgs e)
         {
             const string loopMidiPortsRegistryPath = @"Software\Tobias Erichsen\loopMIDI\Ports";

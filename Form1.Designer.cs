@@ -43,6 +43,7 @@
             this.cmbEndpointVersion = new System.Windows.Forms.ComboBox();
             this.btnInfo = new System.Windows.Forms.Button();
             this.btnGetLoopMIDI = new System.Windows.Forms.Button();
+            this.lblVersion = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // label1
@@ -209,11 +210,25 @@
             this.btnGetLoopMIDI.UseVisualStyleBackColor = false;
             this.btnGetLoopMIDI.Click += new System.EventHandler(this.button1_Click);
             // 
+            // lblVersion
+            // 
+            this.lblVersion.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.lblVersion.AutoSize = false;
+            this.lblVersion.Font = new System.Drawing.Font("Segoe UI", 8F);
+            this.lblVersion.ForeColor = System.Drawing.SystemColors.GrayText;
+            this.lblVersion.Location = new System.Drawing.Point(332, 335);
+            this.lblVersion.Name = "lblVersion";
+            this.lblVersion.Size = new System.Drawing.Size(120, 19);
+            this.lblVersion.TabIndex = 16;
+            this.lblVersion.Text = "v0.0.0";
+            this.lblVersion.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(476, 374);
+            this.Controls.Add(this.lblVersion);
             this.Controls.Add(this.btnGetLoopMIDI);
             this.Controls.Add(this.btnInfo);
             this.Controls.Add(this.cmbEndpointVersion);
@@ -257,6 +272,7 @@
         private System.Windows.Forms.ComboBox cmbEndpointVersion;
         private System.Windows.Forms.Button btnInfo;
         private System.Windows.Forms.Button btnGetLoopMIDI;
+        private System.Windows.Forms.Label lblVersion;
     }
 }
 
