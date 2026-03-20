@@ -36,7 +36,6 @@
             this.lblFromPreview = new System.Windows.Forms.Label();
             this.lblToSuffix = new System.Windows.Forms.Label();
             this.lblFromSuffix = new System.Windows.Forms.Label();
-            this.lblMidi2Reference = new System.Windows.Forms.Label();
             this.create = new System.Windows.Forms.Button();
             this.quit = new System.Windows.Forms.Button();
             this.lblMidiStatus = new System.Windows.Forms.Label();
@@ -128,18 +127,6 @@
             this.lblFromSuffix.TabIndex = 14;
             this.lblFromSuffix.Text = "(B)";
             this.lblFromSuffix.Visible = false;
-            // 
-            // lblMidi2Reference
-            // 
-            this.lblMidi2Reference.Font = new System.Drawing.Font("Segoe UI", 7.5F, System.Drawing.FontStyle.Italic);
-            this.lblMidi2Reference.ForeColor = System.Drawing.Color.DarkGreen;
-            this.lblMidi2Reference.Location = new System.Drawing.Point(370, 188);
-            this.lblMidi2Reference.Name = "lblMidi2Reference";
-            this.lblMidi2Reference.Size = new System.Drawing.Size(82, 49);
-            this.lblMidi2Reference.TabIndex = 12;
-            this.lblMidi2Reference.Text = "(A) (B)\r\nare visual\r\nreference";
-            this.lblMidi2Reference.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            this.lblMidi2Reference.Visible = false;
             // 
             // create
             // 
@@ -235,7 +222,6 @@
             this.Controls.Add(this.lblMidiStatus);
             this.Controls.Add(this.quit);
             this.Controls.Add(this.create);
-            this.Controls.Add(this.lblMidi2Reference);
             this.Controls.Add(this.lblFromSuffix);
             this.Controls.Add(this.lblToSuffix);
             this.Controls.Add(this.lblFromPreview);
@@ -263,7 +249,6 @@
         private System.Windows.Forms.Label lblFromPreview;
         private System.Windows.Forms.Label lblToSuffix;
         private System.Windows.Forms.Label lblFromSuffix;
-        private System.Windows.Forms.Label lblMidi2Reference;
         private System.Windows.Forms.Button create;
         private System.Windows.Forms.Button quit;
         private System.Windows.Forms.Label lblMidiStatus;

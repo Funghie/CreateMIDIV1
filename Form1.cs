@@ -84,7 +84,7 @@ namespace CreateMIDI
             bool isMidi2 = !IsMidi1Selected();
             bool hasName = !string.IsNullOrWhiteSpace(PortName.Text);
 
-            lblPortsWillBeCreated.Text = isMidi2 ? "This port will be created:" : "These ports will be created:";
+            lblPortsWillBeCreated.Text = isMidi2 ? "This bidirectional port will be created" : "These ports will be created:";
 
             if (hasName)
             {
@@ -95,22 +95,25 @@ namespace CreateMIDI
                     lblFromPreview.Text = "WM from " + name;
                     lblToPreview.ForeColor = SystemColors.ControlText;
                     lblFromPreview.ForeColor = SystemColors.ControlText;
+                    lblToSuffix.Text = "(A)";
                     lblToSuffix.Visible = false;
+                    lblFromSuffix.Text = "(B)";
                     lblFromSuffix.Visible = false;
-                    lblMidi2Reference.Visible = false;
                 }
                 else
                 {
                     lblToPreview.Text = name;
-                    lblFromPreview.Text = name;
+                    lblFromPreview.Text = "(A) (B): Labels are shown by some DAW hosts";
                     lblToPreview.ForeColor = SystemColors.ControlText;
-                    lblFromPreview.ForeColor = SystemColors.ControlText;
+                    lblFromPreview.ForeColor = Color.DarkGreen;
 
-                    lblToSuffix.Location = new Point(lblToPreview.Left + TextRenderer.MeasureText(lblToPreview.Text, lblToPreview.Font).Width, lblToPreview.Top);
-                    lblFromSuffix.Location = new Point(lblFromPreview.Left + TextRenderer.MeasureText(lblFromPreview.Text, lblFromPreview.Font).Width, lblFromPreview.Top);
+                    lblToSuffix.Text = "(A) (B)";
+                    int suffixWidth = TextRenderer.MeasureText(lblToSuffix.Text, lblToSuffix.Font).Width;
+                    int rightAlignedStart = PortName.Right - suffixWidth;
+
+                    lblToSuffix.Location = new Point(rightAlignedStart, lblToPreview.Top);
                     lblToSuffix.Visible = true;
-                    lblFromSuffix.Visible = true;
-                    lblMidi2Reference.Visible = true;
+                    lblFromSuffix.Visible = false;
                 }
             }
             else
@@ -119,9 +122,10 @@ namespace CreateMIDI
                 lblFromPreview.Text = "Waiting for Name";
                 lblToPreview.ForeColor = SystemColors.ControlText;
                 lblFromPreview.ForeColor = SystemColors.ControlText;
+                lblToSuffix.Text = "(A)";
                 lblToSuffix.Visible = false;
+                lblFromSuffix.Text = "(B)";
                 lblFromSuffix.Visible = false;
-                lblMidi2Reference.Visible = false;
             }
 
             if (_isCreating)
