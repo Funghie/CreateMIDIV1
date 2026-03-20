@@ -27,6 +27,10 @@ How to Use
    - When creating MIDI 2.0 endpoints, they may show up as (`<name>`) (A) and (`<name>`) (B) in some applications. This is expected behaviour.
 4. Click `Create Port(s)`
 
+<img width="448" height="420" alt="CreateMIDI1" src="https://github.com/user-attachments/assets/1339c5a0-38e2-4d39-97ea-0041d54f4164" />
+<img width="448" height="420" alt="CreateMIDI2" src="https://github.com/user-attachments/assets/ea2c5ad6-1d5a-4868-84a9-f0e94cb2c7d6" />
+
+
 Importing loopMIDI Ports
 ------------------------
 Use the `Import loopMIDI` button to migrate loopMIDI ports to Windows MIDI 1.0.
@@ -34,6 +38,9 @@ Use the `Import loopMIDI` button to migrate loopMIDI ports to Windows MIDI 1.0.
 Each detected loopMIDI port is created with the exact same name.
 
 After import, the app shows a migration summary, including the port names created.
+
+<img width="448" height="420" alt="CreateloopMIDI" src="https://github.com/user-attachments/assets/48a8b80d-24d8-4251-afdf-4837dfd6a397" />
+
 
 Temporary Endpoint Behaviour
 ----------------------------
