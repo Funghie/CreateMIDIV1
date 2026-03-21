@@ -143,13 +143,14 @@
             // 
             // quit
             // 
+            this.quit.BackColor = System.Drawing.Color.MistyRose;
             this.quit.Font = new System.Drawing.Font("Segoe UI", 11F);
             this.quit.Location = new System.Drawing.Point(322, 262);
             this.quit.Name = "quit";
             this.quit.Size = new System.Drawing.Size(130, 45);
             this.quit.TabIndex = 6;
             this.quit.Text = "Quit";
-            this.quit.UseVisualStyleBackColor = true;
+            this.quit.UseVisualStyleBackColor = false;
             this.quit.Click += new System.EventHandler(this.quit_Click);
             // 
             // lblMidiStatus
@@ -213,7 +214,6 @@
             // lblVersion
             // 
             this.lblVersion.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblVersion.AutoSize = false;
             this.lblVersion.Font = new System.Drawing.Font("Segoe UI", 8F);
             this.lblVersion.ForeColor = System.Drawing.SystemColors.GrayText;
             this.lblVersion.Location = new System.Drawing.Point(332, 335);
