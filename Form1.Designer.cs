@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             this.label1 = new System.Windows.Forms.Label();
             this.PortName = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
@@ -42,6 +43,7 @@
             this.lblEndpointVersion = new System.Windows.Forms.Label();
             this.cmbEndpointVersion = new System.Windows.Forms.ComboBox();
             this.btnInfo = new System.Windows.Forms.Button();
+            this.btnPorts = new System.Windows.Forms.Button();
             this.btnGetLoopMIDI = new System.Windows.Forms.Button();
             this.lblVersion = new System.Windows.Forms.Label();
             this.SuspendLayout();
@@ -191,13 +193,25 @@
             // 
             this.btnInfo.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btnInfo.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            this.btnInfo.Image = ((System.Drawing.Image)(resources.GetObject("btnInfo.Image")));
             this.btnInfo.Location = new System.Drawing.Point(428, 24);
             this.btnInfo.Name = "btnInfo";
             this.btnInfo.Size = new System.Drawing.Size(24, 24);
             this.btnInfo.TabIndex = 11;
-            this.btnInfo.Text = "i";
             this.btnInfo.UseVisualStyleBackColor = true;
             this.btnInfo.Click += new System.EventHandler(this.btnInfo_Click);
+            // 
+            // btnPorts
+            // 
+            this.btnPorts.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnPorts.Font = new System.Drawing.Font("Segoe UI", 8F, System.Drawing.FontStyle.Bold);
+            this.btnPorts.Image = ((System.Drawing.Image)(resources.GetObject("btnPorts.Image")));
+            this.btnPorts.Location = new System.Drawing.Point(398, 23);
+            this.btnPorts.Name = "btnPorts";
+            this.btnPorts.Size = new System.Drawing.Size(24, 24);
+            this.btnPorts.TabIndex = 12;
+            this.btnPorts.UseVisualStyleBackColor = true;
+            this.btnPorts.Click += new System.EventHandler(this.btnPorts_Click);
             // 
             // btnGetLoopMIDI
             // 
@@ -230,6 +244,7 @@
             this.ClientSize = new System.Drawing.Size(476, 374);
             this.Controls.Add(this.lblVersion);
             this.Controls.Add(this.btnGetLoopMIDI);
+            this.Controls.Add(this.btnPorts);
             this.Controls.Add(this.btnInfo);
             this.Controls.Add(this.cmbEndpointVersion);
             this.Controls.Add(this.lblEndpointVersion);
@@ -271,6 +286,7 @@
         private System.Windows.Forms.Label lblEndpointVersion;
         private System.Windows.Forms.ComboBox cmbEndpointVersion;
         private System.Windows.Forms.Button btnInfo;
+        private System.Windows.Forms.Button btnPorts;
         private System.Windows.Forms.Button btnGetLoopMIDI;
         private System.Windows.Forms.Label lblVersion;
     }

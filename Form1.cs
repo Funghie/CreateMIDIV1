@@ -21,12 +21,19 @@ namespace CreateMIDI
     public partial class Form1 : Form
     {
         private const int MaxEndpointNameLength = 64;
+        private const string CreatedPortsFileName = "Created MIDI Ports.txt";
+        private const char CreatedPortEntrySeparator = '|';
+        private const string InfoButtonIconResourceName = "InfoButtonIcon";
+        private const string PortsButtonIconResourceName = "PortsButtonIcon";
+        private const string InfoButtonIconFileName = "icon_info.png";
+        private const string PortsButtonIconFileName = "icon_ports.png";
         private bool _isCreating;
 
         // Initialize the form, apply the app icon, and show MIDI service status.
         public Form1()
         {
             InitializeComponent();
+            ApplySmallActionButtonIcons();
             ApplyExecutableIcon();
             lblVersion.Text = GetDisplayVersionText();
 
@@ -106,6 +113,163 @@ namespace CreateMIDI
             {
                 // Keep default icon if extraction fails.
             }
+        }
+
+        // Configure compact icon-only buttons for info and created ports.
+        private void ApplySmallActionButtonIcons()
+        {
+            try
+            {
+                Size buttonSize = new Size(24, 24);
+                Size imageSize = new Size(16, 16);
+
+                btnInfo.Size = buttonSize;
+                btnInfo.Padding = Padding.Empty;
+                Image infoImage = GetButtonImage(InfoButtonIconResourceName, InfoButtonIconFileName, imageSize);
+                if (infoImage != null)
+                {
+                    btnInfo.Image = infoImage;
+                }
+                btnInfo.ImageAlign = ContentAlignment.MiddleCenter;
+                btnInfo.AccessibleName = "Info";
+                btnInfo.Text = btnInfo.Image == null ? "i" : string.Empty;
+
+                btnPorts.Size = buttonSize;
+                btnPorts.Padding = Padding.Empty;
+                Image portsImage = GetButtonImage(PortsButtonIconResourceName, PortsButtonIconFileName, imageSize);
+                if (portsImage != null)
+                {
+                    btnPorts.Image = portsImage;
+                }
+                btnPorts.ImageAlign = ContentAlignment.MiddleCenter;
+                btnPorts.AccessibleName = "Created Ports";
+                btnPorts.Text = btnPorts.Image == null ? "P" : string.Empty;
+            }
+            catch
+            {
+                btnInfo.Text = "i";
+                btnPorts.Text = "P";
+            }
+        }
+
+        private static Image GetButtonImage(string resourceName, string fileName, Size targetSize)
+        {
+            Image resourceImage = GetButtonImageResource(resourceName);
+            if (resourceImage != null)
+            {
+                return ResizeImageToFit(resourceImage, targetSize);
+            }
+
+            Image fileImage = GetButtonImageFile(fileName);
+            if (fileImage != null)
+            {
+                return ResizeImageToFit(fileImage, targetSize);
+            }
+
+            return null;
+        }
+
+        private static Bitmap ResizeImageToFit(Image image, Size targetSize)
+        {
+            using (Bitmap source = TrimTransparentBounds(image))
+            {
+                float ratio = Math.Min((float)targetSize.Width / source.Width, (float)targetSize.Height / source.Height);
+                int width = Math.Max(1, (int)Math.Round(source.Width * ratio));
+                int height = Math.Max(1, (int)Math.Round(source.Height * ratio));
+                int x = (targetSize.Width - width) / 2;
+                int y = (targetSize.Height - height) / 2;
+
+                Bitmap resized = new Bitmap(targetSize.Width, targetSize.Height);
+                using (Graphics graphics = Graphics.FromImage(resized))
+                {
+                    graphics.Clear(Color.Transparent);
+                    graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                    graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                    graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+                    graphics.DrawImage(source, new Rectangle(x, y, width, height));
+                }
+
+                return resized;
+            }
+        }
+
+        private static Bitmap TrimTransparentBounds(Image image)
+        {
+            Bitmap bitmap = image as Bitmap ?? new Bitmap(image);
+            bool createdBitmap = !(image is Bitmap);
+
+            int left = bitmap.Width;
+            int top = bitmap.Height;
+            int right = -1;
+            int bottom = -1;
+
+            for (int y = 0; y < bitmap.Height; y++)
+            {
+                for (int x = 0; x < bitmap.Width; x++)
+                {
+                    if (bitmap.GetPixel(x, y).A == 0)
+                    {
+                        continue;
+                    }
+
+                    if (x < left) left = x;
+                    if (y < top) top = y;
+                    if (x > right) right = x;
+                    if (y > bottom) bottom = y;
+                }
+            }
+
+            if (right < left || bottom < top)
+            {
+                Bitmap transparent = new Bitmap(bitmap.Width, bitmap.Height);
+                if (createdBitmap)
+                {
+                    bitmap.Dispose();
+                }
+
+                return transparent;
+            }
+
+            Rectangle bounds = Rectangle.FromLTRB(left, top, right + 1, bottom + 1);
+            Bitmap trimmed = bitmap.Clone(bounds, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+
+            if (createdBitmap)
+            {
+                bitmap.Dispose();
+            }
+
+            return trimmed;
+        }
+
+        private static Image GetButtonImageFile(string fileName)
+        {
+            string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fileName);
+            if (!File.Exists(filePath))
+            {
+                return null;
+            }
+
+            using (Image image = Image.FromFile(filePath))
+            {
+                return new Bitmap(image);
+            }
+        }
+
+        private static Image GetButtonImageResource(string resourceName)
+        {
+            object resource = Properties.Resources.ResourceManager.GetObject(resourceName);
+
+            if (resource is Bitmap bitmap)
+            {
+                return bitmap;
+            }
+
+            if (resource is Icon icon)
+            {
+                return icon.ToBitmap();
+            }
+
+            return resource as Image;
         }
 
         // UI helpers for endpoint mode selection and preview text.
@@ -221,6 +385,48 @@ namespace CreateMIDI
 
             validationMessage = string.Empty;
             return true;
+        }
+
+        private static string GetCreatedPortsFilePath()
+        {
+            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, CreatedPortsFileName);
+        }
+
+        private static string BuildCreatedPortEntry(string portName, int midiType)
+        {
+            return portName.Trim() + CreatedPortEntrySeparator + midiType.ToString();
+        }
+
+        private static void RememberCreatedPort(string portName, int midiType)
+        {
+            try
+            {
+                string entry = BuildCreatedPortEntry(portName, midiType);
+                string filePath = GetCreatedPortsFilePath();
+
+                if (File.Exists(filePath))
+                {
+                    string[] existingLines = File.ReadAllLines(filePath);
+                    for (int i = 0; i < existingLines.Length; i++)
+                    {
+                        string existingLine = existingLines[i].Trim();
+                        if (existingLine.Length == 0)
+                            continue;
+
+                        if (string.Equals(existingLine, entry, StringComparison.OrdinalIgnoreCase))
+                            return;
+                    }
+                }
+
+                using (StreamWriter writer = new StreamWriter(filePath, true, Encoding.UTF8))
+                {
+                    writer.WriteLine(entry);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Unable to store created port entry: " + ex.Message);
+            }
         }
 
         // Locate midi.exe from PATH first, then try common install folders.
@@ -570,6 +776,9 @@ namespace CreateMIDI
                     CommandRunResult result = await Task.Run(() => CreateMidi1Endpoints(trimmedName));
                     if (result.Success)
                     {
+                        RememberCreatedPort("WM to " + trimmedName, 1);
+                        RememberCreatedPort("WM from " + trimmedName, 1);
+
                         MessageBox.Show(
                             "Created 'WM to " + trimmedName + "' and 'WM from " + trimmedName + "' successfully.",
                             "Success",
@@ -610,6 +819,8 @@ namespace CreateMIDI
                 CommandRunResult result = await Task.Run(() => CreateMidi2Endpoints(trimmedName));
                 if (result.Success)
                 {
+                    RememberCreatedPort(trimmedName, 2);
+
                     MessageBox.Show(
                         "Created '" + trimmedName + "' successfully.",
                         "Success",
@@ -646,6 +857,39 @@ namespace CreateMIDI
             MessageBox.Show(message, "Creation Failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
 
+        // Open the created ports tracking file for quick review.
+        private void btnPorts_Click(object sender, EventArgs e)
+        {
+            string createdPortsPath = GetCreatedPortsFilePath();
+
+            if (!File.Exists(createdPortsPath))
+            {
+                MessageBox.Show(
+                    "The file '" + CreatedPortsFileName + "' has not been created yet.",
+                    "Ports File Missing",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return;
+            }
+
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = createdPortsPath,
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "Unable to open '" + CreatedPortsFileName + "'.\r\n\r\n" + ex.Message,
+                    "Open Failed",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+            }
+        }
+
         // Open the bundled readme file for quick help.
         private void btnInfo_Click(object sender, EventArgs e)
         {
@@ -667,7 +911,7 @@ namespace CreateMIDI
                 Process.Start(new ProcessStartInfo
                 {
                     FileName = readmePath,
-                    UseShellExecute = true
+                    UseShellExecute =	true
                 });
             }
             catch (Exception ex)
@@ -691,6 +935,7 @@ namespace CreateMIDI
         {
             const string loopMidiPortsRegistryPath = @"Software\Tobias Erichsen\loopMIDI\Ports";
             int migratedCount = 0;
+            int skippedExistingCount = 0;
             List<string> migratedPortNames = new List<string>();
 
             try
@@ -727,6 +972,12 @@ namespace CreateMIDI
                         if (valueKind != RegistryValueKind.DWord)
                             continue;
 
+                        if (EndpointExists(portName))
+                        {
+                            skippedExistingCount++;
+                            continue;
+                        }
+
                         CommandRunResult result = await Task.Run(() => CreateMidi1EndpointWithExactName(portName));
                         if (!result.Success)
                         {
@@ -734,6 +985,7 @@ namespace CreateMIDI
                             return;
                         }
 
+                        RememberCreatedPort(portName, 1);
                         migratedCount++;
                         migratedPortNames.Add(portName);
                     }
@@ -741,8 +993,12 @@ namespace CreateMIDI
 
                 if (migratedCount == 0)
                 {
+                    string message = skippedExistingCount > 0
+                        ? "All loopMIDI ports already exist. No new ports were imported."
+                        : "No loopMIDI Ports were found";
+
                     MessageBox.Show(
-                        "No loopMIDI Ports were found",
+                        message,
                         "Migration Complete",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Information);
@@ -754,6 +1010,12 @@ namespace CreateMIDI
                 for (int i = 0; i < migratedPortNames.Count; i++)
                 {
                     successMessage.AppendLine(migratedPortNames[i]);
+                }
+
+                if (skippedExistingCount > 0)
+                {
+                    successMessage.AppendLine();
+                    successMessage.AppendLine(skippedExistingCount + " existing port(s) were skipped.");
                 }
 
                 MessageBox.Show(
