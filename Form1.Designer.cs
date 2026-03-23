@@ -46,6 +46,7 @@
             this.btnPorts = new System.Windows.Forms.Button();
             this.btnGetLoopMIDI = new System.Windows.Forms.Button();
             this.lblVersion = new System.Windows.Forms.Label();
+            this.checkBox1 = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // label1
@@ -159,7 +160,7 @@
             // 
             this.lblMidiStatus.AutoSize = true;
             this.lblMidiStatus.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.lblMidiStatus.Location = new System.Drawing.Point(24, 333);
+            this.lblMidiStatus.Location = new System.Drawing.Point(25, 359);
             this.lblMidiStatus.Name = "lblMidiStatus";
             this.lblMidiStatus.Size = new System.Drawing.Size(236, 20);
             this.lblMidiStatus.TabIndex = 7;
@@ -234,18 +235,29 @@
             this.lblVersion.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.lblVersion.Font = new System.Drawing.Font("Segoe UI", 8F);
             this.lblVersion.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.lblVersion.Location = new System.Drawing.Point(332, 335);
+            this.lblVersion.Location = new System.Drawing.Point(332, 359);
             this.lblVersion.Name = "lblVersion";
             this.lblVersion.Size = new System.Drawing.Size(120, 19);
             this.lblVersion.TabIndex = 16;
             this.lblVersion.Text = "v0.0.0";
             this.lblVersion.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
+            // checkBox1
+            // 
+            this.checkBox1.AutoSize = true;
+            this.checkBox1.Location = new System.Drawing.Point(29, 323);
+            this.checkBox1.Name = "checkBox1";
+            this.checkBox1.Size = new System.Drawing.Size(356, 20);
+            this.checkBox1.TabIndex = 17;
+            this.checkBox1.Text = "Recreate ports on system startup (uses Task Manager)";
+            this.checkBox1.UseVisualStyleBackColor = true;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(476, 374);
+            this.ClientSize = new System.Drawing.Size(476, 398);
+            this.Controls.Add(this.checkBox1);
             this.Controls.Add(this.lblVersion);
             this.Controls.Add(this.btnGetLoopMIDI);
             this.Controls.Add(this.btnPorts);
@@ -293,6 +305,7 @@
         private System.Windows.Forms.Button btnPorts;
         private System.Windows.Forms.Button btnGetLoopMIDI;
         private System.Windows.Forms.Label lblVersion;
+        private System.Windows.Forms.CheckBox checkBox1;
     }
 }
 

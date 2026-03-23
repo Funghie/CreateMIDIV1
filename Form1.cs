@@ -37,6 +37,7 @@ namespace CreateMIDI
         public Form1()
         {
             InitializeComponent();
+            checkBox1.Font = btnGetLoopMIDI.Font;
             AutoScaleMode = AutoScaleMode.Dpi;
             InitializeResponsiveLayout();
             ApplySmallActionButtonIcons();
@@ -89,7 +90,8 @@ namespace CreateMIDI
                 btnInfo,
                 btnPorts,
                 btnGetLoopMIDI,
-                lblVersion
+                lblVersion,
+                checkBox1
             };
 
             for (int i = 0; i < responsiveControls.Length; i++)
@@ -185,7 +187,10 @@ namespace CreateMIDI
                 lblMidiStatus.Location = new Point(margin, footerY + ((footerHeight - lblMidiStatus.PreferredHeight) / 2));
                 lblVersion.Location = new Point(clientWidth - margin - lblVersion.Width, footerY + ((footerHeight - lblVersion.Height) / 2));
 
-                int actionAreaBottom = footerY - footerGap;
+                checkBox1.MaximumSize = new Size(contentWidth, 0);
+                checkBox1.Location = new Point(margin, footerY - footerGap - checkBox1.PreferredSize.Height);
+
+                int actionAreaBottom = checkBox1.Top - rowGap;
                 LayoutActionButtons(margin, actionAreaBottom, contentWidth);
             }
             finally
@@ -1274,7 +1279,6 @@ namespace CreateMIDI
             try
             {
                 string[] lines = File.ReadAllLines(createdPortsPath);
-                List<Task<CommandRunResult>> tasks = new List<Task<CommandRunResult>>();
 
                 for (int i = 0; i < lines.Length; i++)
                 {
@@ -1303,11 +1307,25 @@ namespace CreateMIDI
                     if (midiType == 1)
                     {
                         // MIDI 1.0 ports imported from loopMIDI are stored as exact names (no WM to/from prefix)
+                        // Check if port already exists before attempting to create
+                        if (EndpointExists(portName))
+                        {
+                            Debug.WriteLine("Port already exists, skipping: " + portName);
+                            continue;
+                        }
+
                         result = await Task.Run(() => CreateMidi1EndpointWithExactName(portName));
                     }
                     else if (midiType == 2)
                     {
                         // MIDI 2.0 ports use the base name without suffixes
+                        // Check if port already exists before attempting to create
+                        if (EndpointExists(portName))
+                        {
+                            Debug.WriteLine("Port already exists, skipping: " + portName);
+                            continue;
+                        }
+
                         result = await Task.Run(() => CreateMidi2Endpoints(portName));
                     }
                     else
