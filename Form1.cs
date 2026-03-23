@@ -861,7 +861,7 @@ namespace CreateMIDI
         }
 
         // Create MIDI 1.0 or MIDI 2.0 endpoints using the selected naming rules.
-        private CommandRunResult CreateMidi1Endpoints(string baseName)
+        private static CommandRunResult CreateMidi1Endpoints(string baseName)
         {
             string[] args =
             {
@@ -872,7 +872,7 @@ namespace CreateMIDI
             return RunMidiCommands(args);
         }
 
-        private CommandRunResult CreateMidi2Endpoints(string baseName)
+        private static CommandRunResult CreateMidi2Endpoints(string baseName)
         {
             string[] args =
             {
@@ -882,7 +882,7 @@ namespace CreateMIDI
             return RunMidiCommands(args);
         }
 
-        private CommandRunResult CreateMidi1EndpointWithExactName(string endpointName)
+        private static CommandRunResult CreateMidi1EndpointWithExactName(string endpointName)
         {
             string escapedName = endpointName.Replace("\"", "\\\"");
             string[] args =
@@ -1257,6 +1257,78 @@ namespace CreateMIDI
                     "Migration Failed",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);
+            }
+        }
+
+        // Recreate MIDI ports from the tracking file (used with -startup flag for automatic restoration).
+        public static async void RecreatePortsFromCsv()
+        {
+            string createdPortsPath = GetCreatedPortsFilePath();
+
+            if (!File.Exists(createdPortsPath))
+            {
+                Debug.WriteLine("Created ports file not found: " + createdPortsPath);
+                return;
+            }
+
+            try
+            {
+                string[] lines = File.ReadAllLines(createdPortsPath);
+                List<Task<CommandRunResult>> tasks = new List<Task<CommandRunResult>>();
+
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    string line = lines[i].Trim();
+                    if (line.Length == 0)
+                        continue;
+
+                    string[] parts = line.Split(new[] { CreatedPortEntrySeparator }, StringSplitOptions.None);
+                    if (parts.Length != 2)
+                    {
+                        Debug.WriteLine("Invalid port entry format: " + line);
+                        continue;
+                    }
+
+                    string portName = parts[0].Trim();
+                    string midiTypeStr = parts[1].Trim();
+
+                    if (!int.TryParse(midiTypeStr, out int midiType))
+                    {
+                        Debug.WriteLine("Invalid MIDI type in entry: " + line);
+                        continue;
+                    }
+
+                    CommandRunResult result;
+
+                    if (midiType == 1)
+                    {
+                        // MIDI 1.0 ports imported from loopMIDI are stored as exact names (no WM to/from prefix)
+                        result = await Task.Run(() => CreateMidi1EndpointWithExactName(portName));
+                    }
+                    else if (midiType == 2)
+                    {
+                        // MIDI 2.0 ports use the base name without suffixes
+                        result = await Task.Run(() => CreateMidi2Endpoints(portName));
+                    }
+                    else
+                    {
+                        Debug.WriteLine("Unknown MIDI type: " + midiType);
+                        continue;
+                    }
+
+                    if (!result.Success)
+                    {
+                        Debug.WriteLine("Failed to recreate port: " + portName + " - " + result.ErrorDetails);
+                    }
+                    else
+                    {
+                        Debug.WriteLine("Successfully recreated port: " + portName);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Error recreating ports from file: " + ex.Message);
             }
         }
     }
