@@ -31,6 +31,7 @@ namespace CreateMIDI
         private const int SmallActionImagePaddingLogicalSize = 6;
         private bool _isCreating;
         private Panel _mainContentPanel;
+        private ToolTip _actionButtonToolTip;
 
         // Initialize the form, apply the app icon, and show MIDI service status.
         public Form1()
@@ -39,6 +40,7 @@ namespace CreateMIDI
             AutoScaleMode = AutoScaleMode.Dpi;
             InitializeResponsiveLayout();
             ApplySmallActionButtonIcons();
+            InitializeActionButtonToolTips();
             ApplyExecutableIcon();
             lblVersion.Text = GetDisplayVersionText();
 
@@ -360,6 +362,14 @@ namespace CreateMIDI
                 btnInfo.Text = "i";
                 btnPorts.Text = "P";
             }
+        }
+
+        private void InitializeActionButtonToolTips()
+        {
+            _actionButtonToolTip = components != null ? new ToolTip(components) : new ToolTip();
+            _actionButtonToolTip.ShowAlways = true;
+            _actionButtonToolTip.SetToolTip(btnInfo, "Open readme file");
+            _actionButtonToolTip.SetToolTip(btnPorts, "View list of created ports");
         }
 
         private static Image GetButtonImage(string resourceName, string fileName, Size targetSize)
