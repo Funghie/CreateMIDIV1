@@ -12,6 +12,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
+using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -29,7 +30,10 @@ namespace CreateMIDI
         private const string PortsButtonIconFileName = "icon_ports.png";
         private const int SmallActionButtonLogicalSize = 28;
         private const int SmallActionImagePaddingLogicalSize = 6;
+        private const string StartupRecreateTaskName = "CreateMIDI Recreate Ports";
+        private const string StartupArgument = "-startup";
         private bool _isCreating;
+        private bool _isUpdatingStartupCheckbox;
         private Panel _mainContentPanel;
         private ToolTip _actionButtonToolTip;
 
@@ -42,6 +46,7 @@ namespace CreateMIDI
             InitializeResponsiveLayout();
             ApplySmallActionButtonIcons();
             InitializeActionButtonToolTips();
+            InitializeStartupTaskCheckbox();
             ApplyExecutableIcon();
             lblVersion.Text = GetDisplayVersionText();
 
@@ -307,6 +312,23 @@ namespace CreateMIDI
             }
         }
 
+        private static async Task<bool> WaitForMidiServiceAsync(TimeSpan timeout)
+        {
+            DateTime deadline = DateTime.UtcNow.Add(timeout);
+
+            while (DateTime.UtcNow < deadline)
+            {
+                if (IsMidiServiceRunning())
+                {
+                    return true;
+                }
+
+                await Task.Delay(2000).ConfigureAwait(false);
+            }
+
+            return IsMidiServiceRunning();
+        }
+
         private void label1_Click(object sender, EventArgs e)
         {
 
@@ -375,6 +397,168 @@ namespace CreateMIDI
             _actionButtonToolTip.ShowAlways = true;
             _actionButtonToolTip.SetToolTip(btnInfo, "Open readme file");
             _actionButtonToolTip.SetToolTip(btnPorts, "View list of created ports");
+        }
+
+        private void InitializeStartupTaskCheckbox()
+        {
+            _isUpdatingStartupCheckbox = true;
+            try
+            {
+                checkBox1.Checked = StartupRecreateTaskExists();
+            }
+            finally
+            {
+                _isUpdatingStartupCheckbox = false;
+            }
+        }
+
+        private static bool StartupRecreateTaskExists()
+        {
+            int exitCode;
+            string stdOut;
+            string stdErr;
+            if (!TryRunProcess("schtasks.exe", "/Query /TN \"" + StartupRecreateTaskName + "\"", out exitCode, out stdOut, out stdErr))
+            {
+                return false;
+            }
+
+            return exitCode == 0;
+        }
+
+        private static bool TryCreateStartupRecreateTask(out string errorDetails)
+        {
+            string taskCommand = "\\\"" + Application.ExecutablePath + "\\\" " + StartupArgument;
+
+            string runAsUser;
+            WindowsIdentity identity = WindowsIdentity.GetCurrent();
+            if (identity != null && !string.IsNullOrWhiteSpace(identity.Name))
+            {
+                runAsUser = identity.Name;
+            }
+            else
+            {
+                runAsUser = Environment.UserName;
+            }
+
+            string arguments = "/Create /TN \"" + StartupRecreateTaskName + "\" /TR \"" + taskCommand + "\" /SC ONLOGON /RU \"" + runAsUser + "\" /RL HIGHEST /F";
+
+            int exitCode;
+            string stdOut;
+            string stdErr;
+            if (!TryRunProcess("schtasks.exe", arguments, out exitCode, out stdOut, out stdErr))
+            {
+                errorDetails = "Unable to start Task Scheduler command.";
+                return false;
+            }
+
+            if (exitCode == 0)
+            {
+                errorDetails = string.Empty;
+                return true;
+            }
+
+            errorDetails = BuildCommandErrorDetails("schtasks.exe " + arguments, exitCode, stdOut, stdErr);
+            return false;
+        }
+
+        private static bool TryDeleteStartupRecreateTask(out string errorDetails)
+        {
+            if (!StartupRecreateTaskExists())
+            {
+                errorDetails = string.Empty;
+                return true;
+            }
+
+            int exitCode;
+            string stdOut;
+            string stdErr;
+            string arguments = "/Delete /TN \"" + StartupRecreateTaskName + "\" /F";
+
+            if (!TryRunProcess("schtasks.exe", arguments, out exitCode, out stdOut, out stdErr))
+            {
+                errorDetails = "Unable to start Task Scheduler command.";
+                return false;
+            }
+
+            if (exitCode == 0)
+            {
+                errorDetails = string.Empty;
+                return true;
+            }
+
+            errorDetails = BuildCommandErrorDetails("schtasks.exe " + arguments, exitCode, stdOut, stdErr);
+            return false;
+        }
+
+        private static bool TryRunProcess(string fileName, string arguments, out int exitCode, out string stdOut, out string stdErr)
+        {
+            exitCode = -1;
+            stdOut = string.Empty;
+            stdErr = string.Empty;
+
+            try
+            {
+                using (Process process = new Process())
+                {
+                    process.StartInfo = new ProcessStartInfo
+                    {
+                        FileName = fileName,
+                        Arguments = arguments,
+                        CreateNoWindow = true,
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true
+                    };
+
+                    process.Start();
+                    stdOut = process.StandardOutput.ReadToEnd();
+                    stdErr = process.StandardError.ReadToEnd();
+                    process.WaitForExit();
+                    exitCode = process.ExitCode;
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                stdErr = ex.Message;
+                return false;
+            }
+        }
+
+        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        {
+            if (_isUpdatingStartupCheckbox)
+            {
+                return;
+            }
+
+            bool targetState = checkBox1.Checked;
+            string errorDetails;
+
+            bool success = targetState
+                ? TryCreateStartupRecreateTask(out errorDetails)
+                : TryDeleteStartupRecreateTask(out errorDetails);
+
+            if (success)
+            {
+                return;
+            }
+
+            _isUpdatingStartupCheckbox = true;
+            try
+            {
+                checkBox1.Checked = !targetState;
+            }
+            finally
+            {
+                _isUpdatingStartupCheckbox = false;
+            }
+
+            MessageBox.Show(
+                "Unable to update startup restore task.\r\n\r\n" + errorDetails,
+                "Task Scheduler Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
         }
 
         private static Image GetButtonImage(string resourceName, string fileName, Size targetSize)
@@ -1266,13 +1450,24 @@ namespace CreateMIDI
         }
 
         // Recreate MIDI ports from the tracking file (used with -startup flag for automatic restoration).
-        public static async void RecreatePortsFromCsv()
+        public static void RecreatePortsFromCsv()
+        {
+            RecreatePortsFromCsvAsync().GetAwaiter().GetResult();
+        }
+
+        private static async Task RecreatePortsFromCsvAsync()
         {
             string createdPortsPath = GetCreatedPortsFilePath();
 
             if (!File.Exists(createdPortsPath))
             {
                 Debug.WriteLine("Created ports file not found: " + createdPortsPath);
+                return;
+            }
+
+            if (!await WaitForMidiServiceAsync(TimeSpan.FromMinutes(2)).ConfigureAwait(false))
+            {
+                Debug.WriteLine("MIDI service did not reach running state before timeout. Startup restore skipped.");
                 return;
             }
 
@@ -1296,7 +1491,8 @@ namespace CreateMIDI
                     string portName = parts[0].Trim();
                     string midiTypeStr = parts[1].Trim();
 
-                    if (!int.TryParse(midiTypeStr, out int midiType))
+                    int midiType;
+                    if (!int.TryParse(midiTypeStr, out midiType))
                     {
                         Debug.WriteLine("Invalid MIDI type in entry: " + line);
                         continue;
@@ -1314,7 +1510,7 @@ namespace CreateMIDI
                             continue;
                         }
 
-                        result = await Task.Run(() => CreateMidi1EndpointWithExactName(portName));
+                        result = await Task.Run(() => CreateMidi1EndpointWithExactName(portName)).ConfigureAwait(false);
                     }
                     else if (midiType == 2)
                     {
@@ -1326,7 +1522,7 @@ namespace CreateMIDI
                             continue;
                         }
 
-                        result = await Task.Run(() => CreateMidi2Endpoints(portName));
+                        result = await Task.Run(() => CreateMidi2Endpoints(portName)).ConfigureAwait(false);
                     }
                     else
                     {
