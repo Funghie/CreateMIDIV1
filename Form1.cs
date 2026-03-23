@@ -427,38 +427,114 @@ namespace CreateMIDI
 
         private static bool TryCreateStartupRecreateTask(out string errorDetails)
         {
-            string taskCommand = "\\\"" + Application.ExecutablePath + "\\\" " + StartupArgument;
+            string runAsUser = GetCurrentUserForTaskScheduler();
+            string xmlPath = Path.Combine(Path.GetTempPath(), "CreateMIDI.StartupTask." + Guid.NewGuid().ToString("N") + ".xml");
 
-            string runAsUser;
+            try
+            {
+                string taskXml = BuildStartupTaskXml(runAsUser, Application.ExecutablePath, StartupArgument);
+                File.WriteAllText(xmlPath, taskXml, Encoding.Unicode);
+
+                string arguments = "/Create /TN \"" + StartupRecreateTaskName + "\" /XML \"" + xmlPath + "\" /F";
+
+                int exitCode;
+                string stdOut;
+                string stdErr;
+                if (!TryRunProcess("schtasks.exe", arguments, out exitCode, out stdOut, out stdErr))
+                {
+                    errorDetails = "Unable to start Task Scheduler command.";
+                    return false;
+                }
+
+                if (exitCode == 0)
+                {
+                    errorDetails = string.Empty;
+                    return true;
+                }
+
+                errorDetails = BuildCommandErrorDetails("schtasks.exe " + arguments, exitCode, stdOut, stdErr);
+                return false;
+            }
+            finally
+            {
+                try
+                {
+                    if (File.Exists(xmlPath))
+                    {
+                        File.Delete(xmlPath);
+                    }
+                }
+                catch
+                {
+                    // Ignore temp file cleanup failures.
+                }
+            }
+        }
+
+        private static string GetCurrentUserForTaskScheduler()
+        {
             WindowsIdentity identity = WindowsIdentity.GetCurrent();
             if (identity != null && !string.IsNullOrWhiteSpace(identity.Name))
             {
-                runAsUser = identity.Name;
+                return identity.Name;
             }
-            else
+
+            string domain = Environment.UserDomainName;
+            string user = Environment.UserName;
+            if (!string.IsNullOrWhiteSpace(domain) && !string.IsNullOrWhiteSpace(user))
             {
-                runAsUser = Environment.UserName;
+                return domain + "\\" + user;
             }
 
-            string arguments = "/Create /TN \"" + StartupRecreateTaskName + "\" /TR \"" + taskCommand + "\" /SC ONLOGON /RU \"" + runAsUser + "\" /RL HIGHEST /F";
+            return user;
+        }
 
-            int exitCode;
-            string stdOut;
-            string stdErr;
-            if (!TryRunProcess("schtasks.exe", arguments, out exitCode, out stdOut, out stdErr))
-            {
-                errorDetails = "Unable to start Task Scheduler command.";
-                return false;
-            }
+        private static string BuildStartupTaskXml(string runAsUser, string executablePath, string startupArgument)
+        {
+            string escapedUser = System.Security.SecurityElement.Escape(runAsUser) ?? string.Empty;
+            string escapedExe = System.Security.SecurityElement.Escape(executablePath) ?? string.Empty;
+            string escapedArg = System.Security.SecurityElement.Escape(startupArgument) ?? string.Empty;
 
-            if (exitCode == 0)
-            {
-                errorDetails = string.Empty;
-                return true;
-            }
-
-            errorDetails = BuildCommandErrorDetails("schtasks.exe " + arguments, exitCode, stdOut, stdErr);
-            return false;
+            return
+                "<?xml version=\"1.0\" encoding=\"UTF-16\"?>" +
+                "<Task version=\"1.2\" xmlns=\"http://schemas.microsoft.com/windows/2004/02/mit/task\">" +
+                "<RegistrationInfo>" +
+                "<Author>" + escapedUser + "</Author>" +
+                "<Description>Recreate tracked MIDI ports at user logon.</Description>" +
+                "</RegistrationInfo>" +
+                "<Triggers>" +
+                "<LogonTrigger>" +
+                "<Enabled>true</Enabled>" +
+                "<UserId>" + escapedUser + "</UserId>" +
+                "</LogonTrigger>" +
+                "</Triggers>" +
+                "<Principals>" +
+                "<Principal id=\"Author\">" +
+                "<UserId>" + escapedUser + "</UserId>" +
+                "<LogonType>InteractiveToken</LogonType>" +
+                "<RunLevel>HighestAvailable</RunLevel>" +
+                "</Principal>" +
+                "</Principals>" +
+                "<Settings>" +
+                "<MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>" +
+                "<DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>" +
+                "<StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>" +
+                "<AllowHardTerminate>true</AllowHardTerminate>" +
+                "<StartWhenAvailable>true</StartWhenAvailable>" +
+                "<RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>" +
+                "<IdleSettings><StopOnIdleEnd>false</StopOnIdleEnd><RestartOnIdle>false</RestartOnIdle></IdleSettings>" +
+                "<AllowStartOnDemand>true</AllowStartOnDemand>" +
+                "<Enabled>true</Enabled>" +
+                "<Hidden>false</Hidden>" +
+                "<RunOnlyIfIdle>false</RunOnlyIfIdle>" +
+                "<WakeToRun>false</WakeToRun>" +
+                "<ExecutionTimeLimit>PT10M</ExecutionTimeLimit>" +
+                "<Priority>7</Priority>" +
+                "</Settings>" +
+                "<Actions Context=\"Author\">" +
+                "<Exec><Command>" + escapedExe + "</Command><Arguments>" + escapedArg + "</Arguments></Exec>" +
+                "</Actions>" +
+                "</Task>";
         }
 
         private static bool TryDeleteStartupRecreateTask(out string errorDetails)
