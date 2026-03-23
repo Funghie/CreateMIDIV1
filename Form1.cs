@@ -27,12 +27,17 @@ namespace CreateMIDI
         private const string PortsButtonIconResourceName = "PortsButtonIcon";
         private const string InfoButtonIconFileName = "icon_info.png";
         private const string PortsButtonIconFileName = "icon_ports.png";
+        private const int SmallActionButtonLogicalSize = 28;
+        private const int SmallActionImagePaddingLogicalSize = 6;
         private bool _isCreating;
+        private Panel _mainContentPanel;
 
         // Initialize the form, apply the app icon, and show MIDI service status.
         public Form1()
         {
             InitializeComponent();
+            AutoScaleMode = AutoScaleMode.Dpi;
+            InitializeResponsiveLayout();
             ApplySmallActionButtonIcons();
             ApplyExecutableIcon();
             lblVersion.Text = GetDisplayVersionText();
@@ -50,6 +55,208 @@ namespace CreateMIDI
                 lblMidiStatus.Text = "✗ Windows MIDI Services not found";
                 lblMidiStatus.ForeColor = Color.Red;
             }
+
+            PerformResponsiveLayout();
+        }
+
+        private void InitializeResponsiveLayout()
+        {
+            _mainContentPanel = new Panel();
+            _mainContentPanel.Dock = DockStyle.Fill;
+            _mainContentPanel.Margin = Padding.Empty;
+            _mainContentPanel.Padding = Padding.Empty;
+
+            SuspendLayout();
+            Controls.Add(_mainContentPanel);
+
+            Control[] responsiveControls =
+            {
+                label1,
+                PortName,
+                label2,
+                lblPortsWillBeCreated,
+                lblToPreview,
+                lblFromPreview,
+                lblToSuffix,
+                lblFromSuffix,
+                create,
+                quit,
+                lblMidiStatus,
+                lblEndpointVersion,
+                cmbEndpointVersion,
+                btnInfo,
+                btnPorts,
+                btnGetLoopMIDI,
+                lblVersion
+            };
+
+            for (int i = 0; i < responsiveControls.Length; i++)
+            {
+                responsiveControls[i].Anchor = AnchorStyles.Top | AnchorStyles.Left;
+                _mainContentPanel.Controls.Add(responsiveControls[i]);
+            }
+
+            Resize += ResponsiveLayoutHost_Resize;
+            _mainContentPanel.Resize += ResponsiveLayoutHost_Resize;
+            ResumeLayout(true);
+        }
+
+        private void ResponsiveLayoutHost_Resize(object sender, EventArgs e)
+        {
+            PerformResponsiveLayout();
+        }
+
+        private int ScaleLogicalPixels(int logicalPixels)
+        {
+            return (int)Math.Round(logicalPixels * (DeviceDpi / 96f));
+        }
+
+        private Size ScaleLogicalSize(int width, int height)
+        {
+            return new Size(ScaleLogicalPixels(width), ScaleLogicalPixels(height));
+        }
+
+        private void PerformResponsiveLayout()
+        {
+            if (_mainContentPanel == null)
+            {
+                return;
+            }
+
+            int clientWidth = _mainContentPanel.ClientSize.Width;
+            int clientHeight = _mainContentPanel.ClientSize.Height;
+            if (clientWidth <= 0 || clientHeight <= 0)
+            {
+                return;
+            }
+
+            int margin = ScaleLogicalPixels(24);
+            int smallGap = ScaleLogicalPixels(4);
+            int sectionGap = ScaleLogicalPixels(11);
+            int rowGap = ScaleLogicalPixels(6);
+            int controlGap = ScaleLogicalPixels(4);
+            int footerGap = ScaleLogicalPixels(12);
+            int contentWidth = Math.Max(ScaleLogicalPixels(180), clientWidth - (margin * 2));
+
+            _mainContentPanel.SuspendLayout();
+            try
+            {
+                Size smallButtonSize = ScaleLogicalSize(SmallActionButtonLogicalSize, SmallActionButtonLogicalSize);
+                btnInfo.Size = smallButtonSize;
+                btnPorts.Size = smallButtonSize;
+
+                label1.Location = new Point(margin, margin);
+
+                btnInfo.Location = new Point(clientWidth - margin - btnInfo.Width, margin);
+                btnPorts.Location = new Point(btnInfo.Left - smallGap - btnPorts.Width, margin);
+
+                PortName.Location = new Point(margin, label1.Bottom + controlGap);
+                PortName.Width = contentWidth;
+
+                lblEndpointVersion.Location = new Point(margin, PortName.Bottom + sectionGap);
+                cmbEndpointVersion.Location = new Point(margin, lblEndpointVersion.Bottom + controlGap);
+                cmbEndpointVersion.Width = contentWidth;
+
+                lblPortsWillBeCreated.MaximumSize = new Size(contentWidth, 0);
+                lblPortsWillBeCreated.Location = new Point(margin, cmbEndpointVersion.Bottom + sectionGap);
+
+                int previewIndent = ScaleLogicalPixels(20);
+                int previewWidth = Math.Max(ScaleLogicalPixels(140), contentWidth - previewIndent);
+                lblToPreview.MaximumSize = new Size(previewWidth, 0);
+                lblToPreview.Location = new Point(margin + previewIndent, lblPortsWillBeCreated.Bottom + rowGap);
+
+                lblFromPreview.MaximumSize = new Size(previewWidth, 0);
+                lblFromPreview.Location = new Point(margin + previewIndent, lblToPreview.Bottom + ScaleLogicalPixels(3));
+
+                PositionPreviewSuffix();
+
+                int versionWidth = ScaleLogicalPixels(120);
+                int versionHeight = Math.Max(lblVersion.PreferredHeight, ScaleLogicalPixels(19));
+                lblVersion.Size = new Size(versionWidth, versionHeight);
+
+                int statusWidth = Math.Max(ScaleLogicalPixels(140), clientWidth - (margin * 2) - versionWidth - rowGap);
+                lblMidiStatus.MaximumSize = new Size(statusWidth, 0);
+
+                int footerHeight = Math.Max(lblMidiStatus.PreferredHeight, lblVersion.Height);
+                int footerY = clientHeight - margin - footerHeight;
+
+                lblMidiStatus.Location = new Point(margin, footerY + ((footerHeight - lblMidiStatus.PreferredHeight) / 2));
+                lblVersion.Location = new Point(clientWidth - margin - lblVersion.Width, footerY + ((footerHeight - lblVersion.Height) / 2));
+
+                int actionAreaBottom = footerY - footerGap;
+                LayoutActionButtons(margin, actionAreaBottom, contentWidth);
+            }
+            finally
+            {
+                _mainContentPanel.ResumeLayout();
+            }
+        }
+
+        private void LayoutActionButtons(int left, int bottom, int availableWidth)
+        {
+            Button[] buttons = { create, btnGetLoopMIDI, quit };
+            int[] buttonWidths =
+            {
+                ScaleLogicalPixels(130),
+                ScaleLogicalPixels(156),
+                ScaleLogicalPixels(130)
+            };
+
+            int buttonHeight = ScaleLogicalPixels(45);
+            int gap = ScaleLogicalPixels(6);
+            List<List<int>> rows = new List<List<int>>();
+            List<int> currentRow = new List<int>();
+            int currentRowWidth = 0;
+
+            for (int i = 0; i < buttons.Length; i++)
+            {
+                int requiredWidth = buttonWidths[i] + (currentRow.Count > 0 ? gap : 0);
+                if (currentRow.Count > 0 && currentRowWidth + requiredWidth > availableWidth)
+                {
+                    rows.Add(currentRow);
+                    currentRow = new List<int>();
+                    currentRowWidth = 0;
+                    requiredWidth = buttonWidths[i];
+                }
+
+                currentRow.Add(i);
+                currentRowWidth += requiredWidth;
+            }
+
+            if (currentRow.Count > 0)
+            {
+                rows.Add(currentRow);
+            }
+
+            int totalHeight = (rows.Count * buttonHeight) + ((rows.Count - 1) * gap);
+            int y = bottom - totalHeight;
+
+            for (int rowIndex = 0; rowIndex < rows.Count; rowIndex++)
+            {
+                List<int> row = rows[rowIndex];
+                int x = left;
+
+                for (int itemIndex = 0; itemIndex < row.Count; itemIndex++)
+                {
+                    int buttonIndex = row[itemIndex];
+                    buttons[buttonIndex].SetBounds(x, y, buttonWidths[buttonIndex], buttonHeight);
+                    x += buttonWidths[buttonIndex] + gap;
+                }
+
+                y += buttonHeight + gap;
+            }
+        }
+
+        private void PositionPreviewSuffix()
+        {
+            if (!lblToSuffix.Visible)
+            {
+                return;
+            }
+
+            int suffixWidth = TextRenderer.MeasureText(lblToSuffix.Text, lblToSuffix.Font).Width;
+            int rightAlignedStart = PortName.Right - suffixWidth;
+            lblToSuffix.Location = new Point(rightAlignedStart, lblToPreview.Top);
         }
 
         // Return a short display version from the assembly file version.
@@ -120,8 +327,11 @@ namespace CreateMIDI
         {
             try
             {
-                Size buttonSize = new Size(24, 24);
-                Size imageSize = new Size(16, 16);
+                Size buttonSize = ScaleLogicalSize(SmallActionButtonLogicalSize, SmallActionButtonLogicalSize);
+                int imagePadding = ScaleLogicalPixels(SmallActionImagePaddingLogicalSize);
+                Size imageSize = new Size(
+                    Math.Max(1, buttonSize.Width - imagePadding),
+                    Math.Max(1, buttonSize.Height - imagePadding));
 
                 btnInfo.Size = buttonSize;
                 btnInfo.Padding = Padding.Empty;
@@ -307,10 +517,6 @@ namespace CreateMIDI
                     lblFromPreview.ForeColor = Color.DarkGreen;
 
                     lblToSuffix.Text = "(A) (B)";
-                    int suffixWidth = TextRenderer.MeasureText(lblToSuffix.Text, lblToSuffix.Font).Width;
-                    int rightAlignedStart = PortName.Right - suffixWidth;
-
-                    lblToSuffix.Location = new Point(rightAlignedStart, lblToPreview.Top);
                     lblToSuffix.Visible = true;
                     lblFromSuffix.Visible = false;
                 }
@@ -339,6 +545,8 @@ namespace CreateMIDI
                 create.Enabled = hasName;
                 create.BackColor = hasName ? Color.LimeGreen : SystemColors.Control;
             }
+
+            PerformResponsiveLayout();
         }
 
         private void SetCreationInProgress(bool isCreating)
