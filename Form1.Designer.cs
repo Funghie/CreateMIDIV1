@@ -192,11 +192,13 @@
             // btnInfo
             // 
             this.btnInfo.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnInfo.FlatAppearance.BorderColor = System.Drawing.Color.Black;
             this.btnInfo.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
             this.btnInfo.Image = ((System.Drawing.Image)(resources.GetObject("btnInfo.Image")));
-            this.btnInfo.Location = new System.Drawing.Point(428, 24);
+            this.btnInfo.Location = new System.Drawing.Point(423, 25);
+            this.btnInfo.Margin = new System.Windows.Forms.Padding(0);
             this.btnInfo.Name = "btnInfo";
-            this.btnInfo.Size = new System.Drawing.Size(24, 24);
+            this.btnInfo.Size = new System.Drawing.Size(28, 28);
             this.btnInfo.TabIndex = 11;
             this.btnInfo.UseVisualStyleBackColor = true;
             this.btnInfo.Click += new System.EventHandler(this.btnInfo_Click);
@@ -204,11 +206,13 @@
             // btnPorts
             // 
             this.btnPorts.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnPorts.FlatAppearance.BorderColor = System.Drawing.Color.Black;
             this.btnPorts.Font = new System.Drawing.Font("Segoe UI", 8F, System.Drawing.FontStyle.Bold);
             this.btnPorts.Image = ((System.Drawing.Image)(resources.GetObject("btnPorts.Image")));
-            this.btnPorts.Location = new System.Drawing.Point(398, 23);
+            this.btnPorts.Location = new System.Drawing.Point(393, 25);
+            this.btnPorts.Margin = new System.Windows.Forms.Padding(0);
             this.btnPorts.Name = "btnPorts";
-            this.btnPorts.Size = new System.Drawing.Size(24, 24);
+            this.btnPorts.Size = new System.Drawing.Size(28, 28);
             this.btnPorts.TabIndex = 12;
             this.btnPorts.UseVisualStyleBackColor = true;
             this.btnPorts.Click += new System.EventHandler(this.btnPorts_Click);
