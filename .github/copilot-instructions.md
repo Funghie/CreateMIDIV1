@@ -9,3 +9,5 @@
 
 ## Text Formatting Preferences
 - Use simple plain-text formatting with clear line spacing for text files like `readme.txt`.
+- Distribute `Created MIDI Ports.txt` with a specific explanatory comment header block, including a `# BEGIN HERE` marker when the file is missing, and not as an empty file. 
+- Include helpful explanatory comment lines in `Created MIDI Ports.txt`.

@@ -24,6 +24,18 @@ namespace CreateMIDI
         private const int MaxEndpointNameLength = 64;
         private const string CreatedPortsFileName = "Created MIDI Ports.txt";
         private const char CreatedPortEntrySeparator = '|';
+        private static readonly string[] CreatedPortsFileHeaderLines =
+        {
+            "# CreateMIDI - Created MIDI Ports List",
+            "# Lines in this file are used to recreate ports at Windows startup when \"Recreate ports on system startup\" is enabled.",
+            "# You can edit this file manually to remove ports you no longer want recreated.",
+            "# Blank lines are ignored.",
+            "# Comment lines starting with # or // are ignored.",
+            "# Format: <Port Name>|<Type>",
+            "# Type: 1 = MIDI 1.0, 2 = MIDI 2.0",
+            "# Example: My Keyboard|1",
+            "# BEGIN HERE"
+        };
         private const string InfoButtonIconResourceName = "InfoButtonIcon";
         private const string PortsButtonIconResourceName = "PortsButtonIcon";
         private const string InfoButtonIconFileName = "icon_info.png";
@@ -889,12 +901,36 @@ namespace CreateMIDI
             return trimmed.StartsWith("//", StringComparison.Ordinal) || trimmed.StartsWith("#", StringComparison.Ordinal);
         }
 
+        private static void EnsureCreatedPortsFileExists()
+        {
+            string filePath = GetCreatedPortsFilePath();
+            if (File.Exists(filePath))
+                return;
+
+            try
+            {
+                using (StreamWriter writer = new StreamWriter(filePath, false, Encoding.UTF8))
+                {
+                    for (int i = 0; i < CreatedPortsFileHeaderLines.Length; i++)
+                    {
+                        writer.WriteLine(CreatedPortsFileHeaderLines[i]);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Unable to initialize created ports file: " + ex.Message);
+            }
+        }
+
         private static void RememberCreatedPort(string portName, int midiType)
         {
             try
             {
                 string entry = BuildCreatedPortEntry(portName, midiType);
                 string filePath = GetCreatedPortsFilePath();
+
+                EnsureCreatedPortsFileExists();
 
                 if (File.Exists(filePath))
                 {
@@ -1546,6 +1582,7 @@ namespace CreateMIDI
         private static async Task RecreatePortsFromCsvAsync()
         {
             string createdPortsPath = GetCreatedPortsFilePath();
+            EnsureCreatedPortsFileExists();
 
             if (!File.Exists(createdPortsPath))
             {
