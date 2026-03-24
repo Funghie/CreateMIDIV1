@@ -11,8 +11,8 @@ using System.Drawing;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.ServiceProcess;
 using System.Security.Principal;
+using System.ServiceProcess;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -880,6 +880,15 @@ namespace CreateMIDI
             return portName.Trim() + CreatedPortEntrySeparator + midiType.ToString();
         }
 
+        private static bool IsCreatedPortCommentLine(string line)
+        {
+            if (string.IsNullOrWhiteSpace(line))
+                return false;
+
+            string trimmed = line.TrimStart();
+            return trimmed.StartsWith("//", StringComparison.Ordinal) || trimmed.StartsWith("#", StringComparison.Ordinal);
+        }
+
         private static void RememberCreatedPort(string portName, int midiType)
         {
             try
@@ -892,6 +901,9 @@ namespace CreateMIDI
                     string[] existingLines = File.ReadAllLines(filePath);
                     for (int i = 0; i < existingLines.Length; i++)
                     {
+                        if (IsCreatedPortCommentLine(existingLines[i]))
+                            continue;
+
                         string existingLine = existingLines[i].Trim();
                         if (existingLine.Length == 0)
                             continue;
@@ -1394,7 +1406,7 @@ namespace CreateMIDI
                 Process.Start(new ProcessStartInfo
                 {
                     FileName = readmePath,
-                    UseShellExecute =	true
+                    UseShellExecute = true
                 });
             }
             catch (Exception ex)
@@ -1553,6 +1565,9 @@ namespace CreateMIDI
 
                 for (int i = 0; i < lines.Length; i++)
                 {
+                    if (IsCreatedPortCommentLine(lines[i]))
+                        continue;
+
                     string line = lines[i].Trim();
                     if (line.Length == 0)
                         continue;
